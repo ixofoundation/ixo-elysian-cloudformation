@@ -519,21 +519,6 @@ Resources:
     Metadata:
       'AWS::CloudFormation::Designer':
         id: a4daca71-0038-41d5-ae13-e3ec8ee0ed93
-  InboundResponsePortsNetworkAclEntry:
-    Type: 'AWS::EC2::NetworkAclEntry'
-    Properties:
-      NetworkAclId: !Ref NetworkAcl
-      RuleNumber: '102'
-      Protocol: '6'
-      RuleAction: allow
-      Egress: 'false'
-      CidrBlock: 0.0.0.0/0
-      PortRange:
-        From: '1024'
-        To: '65535'
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: 258a362f-1f9b-4145-8885-a25ad3aa0eae
   OutBoundHTTPNetworkAclEntry:
     Type: 'AWS::EC2::NetworkAclEntry'
     Properties:
@@ -625,11 +610,11 @@ Resources:
               httpd: []
           files:
             /var/www/html/index.html:
-              content: !Join 
+              content: !Join
                 - |+
 
                 - - <img src="
-                  - !FindInMap 
+                  - !FindInMap
                     - Region2Examples
                     - !Ref 'AWS::Region'
                     - Examples
@@ -641,7 +626,7 @@ Resources:
               owner: root
               group: root
             /etc/cfn/cfn-hup.conf:
-              content: !Join 
+              content: !Join
                 - ''
                 - - |
                     [main]
@@ -657,7 +642,7 @@ Resources:
               owner: root
               group: root
             /etc/cfn/hooks.d/cfn-auto-reloader.conf:
-              content: !Join 
+              content: !Join
                 - ''
                 - - |
                     [cfn-auto-reloader-hook]
@@ -692,10 +677,10 @@ Resources:
       'AWS::CloudFormation::Designer':
         id: c24397fa-4a78-4dfe-87e2-3deed4fd7e15
     Properties:
-      ImageId: !FindInMap 
+      ImageId: !FindInMap
         - AWSRegionArch2AMI
         - !Ref 'AWS::Region'
-        - !FindInMap 
+        - !FindInMap
           - AWSInstanceType2Arch
           - !Ref InstanceType
           - Arch
@@ -711,7 +696,7 @@ Resources:
           DeviceIndex: '0'
           DeleteOnTermination: 'true'
           SubnetId: !Ref Subnet
-      UserData: !Base64 
+      UserData: !Base64
         'Fn::Join':
           - ''
           - - |
@@ -737,12 +722,27 @@ Resources:
     CreationPolicy:
       ResourceSignal:
         Timeout: PT15M
+  InboundHTTPSNetworkAclEntry:
+    Type: 'AWS::EC2::NetworkAclEntry'
+    Properties:
+      NetworkAclId: !Ref NetworkAcl
+      RuleNumber: '100'
+      Protocol: '6'
+      RuleAction: allow
+      Egress: 'false'
+      CidrBlock: 0.0.0.0/0
+      PortRange:
+        From: '443'
+        To: '443'
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: cf3b6470-f42d-4f4d-b9ed-8cc1f09ac4f9
 Outputs:
   URL:
-    Value: !Join 
+    Value: !Join
       - ''
       - - 'http://'
-        - !GetAtt 
+        - !GetAtt
           - WebServerInstance
           - PublicIp
     Description: Newly created application URL
@@ -769,7 +769,6 @@ Metadata:
         - f0b41499-dd3f-4347-bbd0-d680760dea2d
         - 040ee814-b862-4e26-b6b8-2fe201a3461e
         - 3e23ed71-da77-4ea9-9044-f46f6fdf2c5d
-        - 8ac904fc-c5cd-45ec-8c51-e45eca6b4627
     f0b41499-dd3f-4347-bbd0-d680760dea2d:
       size:
         width: 60
@@ -782,6 +781,10 @@ Metadata:
       embeds: []
       iscontainedinside:
         - 509f11b3-ef83-44fc-892e-bc3e79fbf7e5
+        - 509f11b3-ef83-44fc-892e-bc3e79fbf7e5
+        - 509f11b3-ef83-44fc-892e-bc3e79fbf7e5
+        - 509f11b3-ef83-44fc-892e-bc3e79fbf7e5
+        - 509f11b3-ef83-44fc-892e-bc3e79fbf7e5
     040ee814-b862-4e26-b6b8-2fe201a3461e:
       size:
         width: 420
@@ -792,13 +795,17 @@ Metadata:
       z: 2
       parent: 509f11b3-ef83-44fc-892e-bc3e79fbf7e5
       embeds:
+        - cf3b6470-f42d-4f4d-b9ed-8cc1f09ac4f9
         - dbd5d415-da3c-470a-8b05-81a3e3bd0848
         - 20751781-1694-47a0-91e1-fbe26070a977
         - 7c4a00bb-dbfd-4fc4-b209-ee8bfbe7e7e4
-        - 258a362f-1f9b-4145-8885-a25ad3aa0eae
         - a4daca71-0038-41d5-ae13-e3ec8ee0ed93
         - 4bbfb083-0b54-43e8-8c5e-3abe04918eb6
       iscontainedinside:
+        - 509f11b3-ef83-44fc-892e-bc3e79fbf7e5
+        - 509f11b3-ef83-44fc-892e-bc3e79fbf7e5
+        - 509f11b3-ef83-44fc-892e-bc3e79fbf7e5
+        - 509f11b3-ef83-44fc-892e-bc3e79fbf7e5
         - 509f11b3-ef83-44fc-892e-bc3e79fbf7e5
     dbd5d415-da3c-470a-8b05-81a3e3bd0848:
       size:
@@ -812,6 +819,10 @@ Metadata:
       embeds: []
       iscontainedinside:
         - 040ee814-b862-4e26-b6b8-2fe201a3461e
+        - 040ee814-b862-4e26-b6b8-2fe201a3461e
+        - 040ee814-b862-4e26-b6b8-2fe201a3461e
+        - 040ee814-b862-4e26-b6b8-2fe201a3461e
+        - 040ee814-b862-4e26-b6b8-2fe201a3461e
     20751781-1694-47a0-91e1-fbe26070a977:
       size:
         width: 60
@@ -823,6 +834,10 @@ Metadata:
       parent: 040ee814-b862-4e26-b6b8-2fe201a3461e
       embeds: []
       iscontainedinside:
+        - 040ee814-b862-4e26-b6b8-2fe201a3461e
+        - 040ee814-b862-4e26-b6b8-2fe201a3461e
+        - 040ee814-b862-4e26-b6b8-2fe201a3461e
+        - 040ee814-b862-4e26-b6b8-2fe201a3461e
         - 040ee814-b862-4e26-b6b8-2fe201a3461e
     7c4a00bb-dbfd-4fc4-b209-ee8bfbe7e7e4:
       size:
@@ -836,17 +851,9 @@ Metadata:
       embeds: []
       iscontainedinside:
         - 040ee814-b862-4e26-b6b8-2fe201a3461e
-    258a362f-1f9b-4145-8885-a25ad3aa0eae:
-      size:
-        width: 60
-        height: 60
-      position:
-        x: 240
-        'y': 330
-      z: 3
-      parent: 040ee814-b862-4e26-b6b8-2fe201a3461e
-      embeds: []
-      iscontainedinside:
+        - 040ee814-b862-4e26-b6b8-2fe201a3461e
+        - 040ee814-b862-4e26-b6b8-2fe201a3461e
+        - 040ee814-b862-4e26-b6b8-2fe201a3461e
         - 040ee814-b862-4e26-b6b8-2fe201a3461e
     a4daca71-0038-41d5-ae13-e3ec8ee0ed93:
       size:
@@ -860,6 +867,10 @@ Metadata:
       embeds: []
       iscontainedinside:
         - 040ee814-b862-4e26-b6b8-2fe201a3461e
+        - 040ee814-b862-4e26-b6b8-2fe201a3461e
+        - 040ee814-b862-4e26-b6b8-2fe201a3461e
+        - 040ee814-b862-4e26-b6b8-2fe201a3461e
+        - 040ee814-b862-4e26-b6b8-2fe201a3461e
     4bbfb083-0b54-43e8-8c5e-3abe04918eb6:
       size:
         width: 60
@@ -871,6 +882,10 @@ Metadata:
       parent: 040ee814-b862-4e26-b6b8-2fe201a3461e
       embeds: []
       iscontainedinside:
+        - 040ee814-b862-4e26-b6b8-2fe201a3461e
+        - 040ee814-b862-4e26-b6b8-2fe201a3461e
+        - 040ee814-b862-4e26-b6b8-2fe201a3461e
+        - 040ee814-b862-4e26-b6b8-2fe201a3461e
         - 040ee814-b862-4e26-b6b8-2fe201a3461e
     3e23ed71-da77-4ea9-9044-f46f6fdf2c5d:
       size:
@@ -885,11 +900,16 @@ Metadata:
         - a4db911d-84dd-427c-a181-07cf826d589a
       iscontainedinside:
         - 509f11b3-ef83-44fc-892e-bc3e79fbf7e5
+        - 509f11b3-ef83-44fc-892e-bc3e79fbf7e5
+        - 509f11b3-ef83-44fc-892e-bc3e79fbf7e5
+        - 509f11b3-ef83-44fc-892e-bc3e79fbf7e5
+        - 509f11b3-ef83-44fc-892e-bc3e79fbf7e5
     de7cff44-1608-42db-803f-aca7dcab5df1:
       source:
         id: 509f11b3-ef83-44fc-892e-bc3e79fbf7e5
       target:
         id: 974134fa-bb42-40a0-a7c0-a906cd8d53b5
+      z: 1
     a4db911d-84dd-427c-a181-07cf826d589a:
       size:
         width: 60
@@ -904,6 +924,10 @@ Metadata:
         - 974134fa-bb42-40a0-a7c0-a906cd8d53b5
       iscontainedinside:
         - 3e23ed71-da77-4ea9-9044-f46f6fdf2c5d
+        - 3e23ed71-da77-4ea9-9044-f46f6fdf2c5d
+        - 3e23ed71-da77-4ea9-9044-f46f6fdf2c5d
+        - 3e23ed71-da77-4ea9-9044-f46f6fdf2c5d
+        - 3e23ed71-da77-4ea9-9044-f46f6fdf2c5d
       dependson:
         - de7cff44-1608-42db-803f-aca7dcab5df1
     8ac904fc-c5cd-45ec-8c51-e45eca6b4627:
@@ -912,12 +936,12 @@ Metadata:
         height: 240
       position:
         x: 90
-        'y': 540
-      z: 2
-      parent: 509f11b3-ef83-44fc-892e-bc3e79fbf7e5
+        'y': 660
+      z: 0
       embeds:
         - c24397fa-4a78-4dfe-87e2-3deed4fd7e15
       iscontainedinside:
+        - 509f11b3-ef83-44fc-892e-bc3e79fbf7e5
         - 509f11b3-ef83-44fc-892e-bc3e79fbf7e5
     c24397fa-4a78-4dfe-87e2-3deed4fd7e15:
       size:
@@ -925,11 +949,15 @@ Metadata:
         height: 60
       position:
         x: 120
-        'y': 600
+        'y': 720
       z: 3
       parent: 8ac904fc-c5cd-45ec-8c51-e45eca6b4627
       embeds: []
       iscontainedinside:
+        - 8ac904fc-c5cd-45ec-8c51-e45eca6b4627
+        - 8ac904fc-c5cd-45ec-8c51-e45eca6b4627
+        - 8ac904fc-c5cd-45ec-8c51-e45eca6b4627
+        - 8ac904fc-c5cd-45ec-8c51-e45eca6b4627
         - 8ac904fc-c5cd-45ec-8c51-e45eca6b4627
       dependson:
         - de7cff44-1608-42db-803f-aca7dcab5df1
@@ -951,8 +979,26 @@ Metadata:
         id: 040ee814-b862-4e26-b6b8-2fe201a3461e
       target:
         id: 8ac904fc-c5cd-45ec-8c51-e45eca6b4627
+      z: 2
     8693a5d7-d01d-461b-b39e-11df0123e848:
       source:
         id: 3e23ed71-da77-4ea9-9044-f46f6fdf2c5d
       target:
         id: 8ac904fc-c5cd-45ec-8c51-e45eca6b4627
+      z: 2
+    cf3b6470-f42d-4f4d-b9ed-8cc1f09ac4f9:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: 240
+        'y': 330
+      z: 3
+      parent: 040ee814-b862-4e26-b6b8-2fe201a3461e
+      embeds: []
+      iscontainedinside:
+        - 040ee814-b862-4e26-b6b8-2fe201a3461e
+        - 040ee814-b862-4e26-b6b8-2fe201a3461e
+        - 040ee814-b862-4e26-b6b8-2fe201a3461e
+        - 040ee814-b862-4e26-b6b8-2fe201a3461e
+        - 040ee814-b862-4e26-b6b8-2fe201a3461e
