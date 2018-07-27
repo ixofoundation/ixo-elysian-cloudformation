@@ -1,15 +1,7 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: >-
-  AWS CloudFormation Sample Template VPC_Single_Instance_In_Subnet: Sample
-  template showing how to create a VPC and add an EC2 instance with an Elastic
-  IP address and a security group. **WARNING** This template creates an Amazon
-  EC2 instance. You will be billed for the AWS resources used if you create a
-  stack from this template.
-Parameters:
-  KeyName:
-    Description: Name of an existing EC2 KeyPair to enable SSH access to the instance
-    Type: 'AWS::EC2::KeyPair::KeyName'
-    ConstraintDescription: must be the name of an existing EC2 KeyPair.
+  AWS CloudFormation template instantiating a Network stack for Cross-Stack
+  utilization, exporting VPC, Subnet & SecurityGroup
 Resources:
   VPC:
     Type: 'AWS::EC2::VPC'
@@ -85,7 +77,15 @@ Resources:
       SubnetId: !Ref PublicSubnet
       NetworkAclId: !GetAtt
         - VPC
-        - DefaultNetworkAcl        
+        - DefaultNetworkAcl
+  # PublicSubnetNetworkAclAssociation:
+  #   Type: 'AWS::EC2::SubnetNetworkAclAssociation'
+  #   Properties:
+  #     SubnetId: !Ref PublicSubnet
+  #     NetworkAclId: !Ref PublicNetworkAcl
+  #   Metadata:
+  #     'AWS::CloudFormation::Designer':
+  #       id: 545e3c33-19f9-48b4-bfc0-843261c88b1b
   # PublicNetworkAcl:
   #   Type: 'AWS::EC2::NetworkAcl'
   #   Properties:
@@ -186,14 +186,6 @@ Resources:
   #   Metadata:
   #     'AWS::CloudFormation::Designer':
   #       id: a5a0b7b4-da38-4385-adc9-b320f2445ba0
-  # PublicSubnetNetworkAclAssociation:
-  #   Type: 'AWS::EC2::SubnetNetworkAclAssociation'
-  #   Properties:
-  #     SubnetId: !Ref PublicSubnet
-  #     NetworkAclId: !Ref PublicNetworkAcl
-  #   Metadata:
-  #     'AWS::CloudFormation::Designer':
-  #       id: 545e3c33-19f9-48b4-bfc0-843261c88b1b
   InstanceSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:

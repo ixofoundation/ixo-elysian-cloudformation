@@ -1,0 +1,10 @@
+[
+  {
+    "ParameterKey": "NetworkStackName",
+    "ParameterValue": "Elysian-VPC-Subnet-Stack"
+  },
+  {
+    "ParameterKey": "KeyName",
+    "ParameterValue": "ixoworld.xyz"
+  }
+]
