@@ -72,11 +72,13 @@ Resources:
         configSets:
           All:
             - PrepareDocker
+            - PrepareElysian
             - ConfigureSampleApp
         PrepareDocker:
           packages:
             yum:
               docker: []
+              git: []
           users:
             "ec2-user":
               groups:
@@ -93,6 +95,19 @@ Resources:
               docker:
                 enabled: 'true'
                 ensureRunning: 'true'
+        PrepareElysian:
+          commands:
+            clone-repository:
+              command: "git clone https://github.com/ixofoundation/ixo-pds.git repository"
+              cwd: "~"
+            extract-deployment:
+              command:
+                - mkdir -p deployment/bin
+                - cp -R repository/bin/ deployment/bin
+                - cp docker-compose.yml deployment
+                - cp docker-compose.prod.yml deployment
+                - rm -rf repository
+              cwd: "~"
         ConfigureSampleApp:
           packages:
             yum:
