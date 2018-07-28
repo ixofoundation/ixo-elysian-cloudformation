@@ -188,6 +188,13 @@ Resources:
         # H is the hour designator that follows the value for the number of hours.
         # M is the minute designator that follows the value for the number of minutes.
         # S is the second designator that follows the value for the number of seconds.
+  IPAddress:
+    Type: 'AWS::EC2::EIP'
+  IPAssoc:
+    Type: 'AWS::EC2::EIPAssociation'
+    Properties:
+      InstanceId: !Ref EC2DockerhostInstance
+      EIP: !Ref IPAddress
 Outputs:
   URL:
     Description: URL at which public access is possible
@@ -197,3 +204,9 @@ Outputs:
         - !GetAtt
           - EC2DockerhostInstance
           - PublicDnsName
+  InstanceId:
+    Description: InstanceId of the newly created EC2 instance
+    Value: !Ref EC2DockerhostInstance
+  InstanceIPAddress:
+    Description: IP address of the newly created EC2 instance
+    Value: !Ref IPAddress
