@@ -65,7 +65,7 @@ Mappings:
       HVM64: ami-05a66c68
       HVMG2: NOT_SUPPORTED
 Resources:
-  DockerhostInstance:
+  EC2DockerhostInstance:
     Type: 'AWS::EC2::Instance'
     Metadata:
       'AWS::CloudFormation::Init':
@@ -117,7 +117,7 @@ Resources:
               command: cp ixo-pds-repository/bin/* elysian/bin
               cwd: "/home/ec2-user"
             remove-build-in-docker-compose:
-              command: sed -i 's/build/# build/g' docker-compose.yml 
+              command: sed -i 's/build/# build/g' docker-compose.yml
               cwd: "/home/ec2-user/elysian"
             remove-repository:
               command: rm -rf ixo-pds-repository
@@ -158,7 +158,7 @@ Resources:
             - '/opt/aws/bin/cfn-init -v '
             - '         --stack '
             - !Ref 'AWS::StackName'
-            - '         --resource DockerhostInstance '
+            - '         --resource EC2DockerhostInstance '
             - '         --configsets All '
             - '         --region '
             - !Ref 'AWS::Region'
@@ -169,7 +169,7 @@ Resources:
             - '/opt/aws/bin/cfn-signal -e $? '
             - '         --stack '
             - !Ref 'AWS::StackName'
-            - '         --resource DockerhostInstance '
+            - '         --resource EC2DockerhostInstance '
             - '         --region '
             - !Ref 'AWS::Region'
             - |+
@@ -179,12 +179,21 @@ Resources:
     CreationPolicy:
       ResourceSignal:
         Timeout: PT5M
+        # P is the duration designator (for period) placed at the start of the duration representation.
+        # Y is the year designator that follows the value for the number of years.
+        # M is the month designator that follows the value for the number of months.
+        # W is the week designator that follows the value for the number of weeks.
+        # D is the day designator that follows the value for the number of days.
+        # T is the time designator that precedes the time components of the representation.
+        # H is the hour designator that follows the value for the number of hours.
+        # M is the minute designator that follows the value for the number of minutes.
+        # S is the second designator that follows the value for the number of seconds.
 Outputs:
   URL:
-    Description: URL of the sample website
+    Description: URL at which public access is possible
     Value: !Join
       - ''
       - - 'http://'
         - !GetAtt
-          - DockerhostInstance
+          - EC2DockerhostInstance
           - PublicDnsName
