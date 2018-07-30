@@ -146,33 +146,13 @@ Resources:
           DeleteOnTermination: 'true'
           SubnetId: !ImportValue
             'Fn::Sub': '${NetworkStackName}-SubnetID'
-      UserData: !Base64
-        'Fn::Join':
-          - ''
-          - - |
-              #!/bin/bash -xe
-            - |
-              yum update -y aws-cfn-bootstrap
-            - |
-              # Install the files and packages from the metadata
-            - '/opt/aws/bin/cfn-init -v '
-            - '         --stack '
-            - !Ref 'AWS::StackName'
-            - '         --resource EC2DockerhostInstance '
-            - '         --configsets All '
-            - '         --region '
-            - !Ref 'AWS::Region'
-            - |+
-
-            - |
-              # Signal the status from cfn-init
-            - '/opt/aws/bin/cfn-signal -e $? '
-            - '         --stack '
-            - !Ref 'AWS::StackName'
-            - '         --resource EC2DockerhostInstance '
-            - '         --region '
-            - !Ref 'AWS::Region'
-            - |+
+      UserData:
+        Fn::Base64: !Sub |
+         #!/usr/bin/env bash
+         set -o errexit
+         yum -y update aws-cfn-bootstrap
+         /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource EC2DockerhostInstance --configsets All --region ${AWS::Region}
+         /opt/aws/bin/cfn-signal --exit-code $? --stack ${AWS::StackName} --resource EC2DockerhostInstance --region ${AWS::Region}
       Tags:
         - Key: Application
           Value: !Ref 'AWS::StackId'
