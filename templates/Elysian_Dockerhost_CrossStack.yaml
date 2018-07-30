@@ -73,6 +73,7 @@ Resources:
           All:
             - PrepareDocker
             - PrepareElysian
+            - PreparePersistentFilesystem
             - DeployElysian
         PrepareDocker:
           packages:
@@ -122,13 +123,37 @@ Resources:
             remove-repository:
               command: rm -rf ixo-pds-repository
               cwd: "/home/ec2-user"
+        PreparePersistentFilesystem:
+          commands:
+            1_pvcreate:
+              # create LVM physical volume
+              command: pvcreate /dev/xvdf
+            2_vgcreate:
+              # create volume group
+              command: vgcreate vg0 /dev/xvdf
+            3_lvcreate:
+              # create logical volume
+              command: lvcreate -l 100%FREE -n elysian vg0
+            4_mkfs:
+              # create ext4 file system
+              command: mkfs.ext4 /dev/vg0/elysian
+            5_mkdir:
+              # make the /var/app directory
+              command: mkdir data
+              cwd: "/home/ec2-user/elysian"
+            6_fstab:
+              # add the mount point to the /etc/fstab file so it will be mounted on system boot
+              command: echo "/dev/mapper/vg0-elysian /home/ec2-user/elysian/data ext4 defaults 0 2" >> /etc/fstab
+            7_mount:
+              # mount the newly added logical volume to the /var/myapp directory
+              command: mount -a
         DeployElysian:
           commands:
             docker-compose-elysian:
               command: ./start.sh prod
               cwd: "/home/ec2-user/elysian/bin"
               env:
-                HOME: "/home/ec2-user/"
+                HOME: "/home/ec2-user/elysian"
     Properties:
       InstanceType: t2.micro
       ImageId: !FindInMap
@@ -143,9 +168,18 @@ Resources:
               'Fn::Sub': '${NetworkStackName}-SecurityGroupID'
           AssociatePublicIpAddress: 'true'
           DeviceIndex: '0'
-          DeleteOnTermination: 'true'
+          DeleteOnTermination: true
           SubnetId: !ImportValue
             'Fn::Sub': '${NetworkStackName}-SubnetID'
+# >>>
+      BlockDeviceMappings:
+        # Create a separate volume
+        - DeviceName: /dev/sdf
+          Ebs:
+            DeleteOnTermination: true
+            # Encrypted: true
+            VolumeSize: 8
+# <<<
       UserData:
         Fn::Base64: !Sub |
          #!/usr/bin/env bash
