@@ -225,6 +225,14 @@ Outputs:
       - GroupId
     Export:
       Name: !Sub '${AWS::StackName}-SecurityGroupID'
+  AvailabilityZone:
+    Description: The availability zone to use for volumes
+    Value: !GetAtt
+      - PublicSubnet
+      - AvailabilityZone
+    Export:
+      Name: !Sub '${AWS::StackName}-AvailabilityZone'
+
 Metadata:
   'AWS::CloudFormation::Designer':
     974134fa-bb42-40a0-a7c0-a906cd8d53b5:

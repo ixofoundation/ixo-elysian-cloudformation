@@ -19,51 +19,29 @@ Parameters:
     Type: 'AWS::EC2::KeyPair::KeyName'
     ConstraintDescription: must be the name of an existing EC2 KeyPair.
 Mappings:
-  AWSRegionArch2AMI:
+  AWSRegionMap:
     us-east-1:
-      PV64: ami-8ff710e2
       HVM64: ami-f5f41398
-      HVMG2: ami-4afd1d27
     us-west-2:
-      PV64: ami-eff1028f
       HVM64: ami-d0f506b0
-      HVMG2: ami-ee897b8e
     us-west-1:
-      PV64: ami-ac85fbcc
       HVM64: ami-6e84fa0e
-      HVMG2: ami-69106909
     eu-west-1:
-      PV64: ami-23ab2250
       HVM64: ami-b0ac25c3
-      HVMG2: ami-936de5e0
     eu-central-1:
-      PV64: ami-27c12348
       HVM64: ami-d3c022bc
-      HVMG2: ami-8e7092e1
     ap-northeast-1:
-      PV64: ami-26160d48
       HVM64: ami-29160d47
-      HVMG2: ami-91809aff
     ap-northeast-2:
-      PV64: NOT_SUPPORTED
       HVM64: ami-cf32faa1
-      HVMG2: NOT_SUPPORTED
     ap-southeast-1:
-      PV64: ami-f3dd0a90
       HVM64: ami-1ddc0b7e
-      HVMG2: ami-3c30e75f
     ap-southeast-2:
-      PV64: ami-8f94b9ec
       HVM64: ami-0c95b86f
-      HVMG2: ami-543d1137
     sa-east-1:
-      PV64: ami-e188018d
       HVM64: ami-fb890097
-      HVMG2: NOT_SUPPORTED
     cn-north-1:
-      PV64: ami-77a46e1a
       HVM64: ami-05a66c68
-      HVMG2: NOT_SUPPORTED
 Resources:
   EC2DockerhostInstance:
     Type: 'AWS::EC2::Instance'
@@ -125,28 +103,44 @@ Resources:
               cwd: "/home/ec2-user"
         PreparePersistentFilesystem:
           commands:
-            1_pvcreate:
+            0_pvcreate:
               # create LVM physical volume
               command: pvcreate /dev/xvdf
-            2_vgcreate:
+            1_vgcreate:
               # create volume group
               command: vgcreate vg0 /dev/xvdf
-            3_lvcreate:
+            2_lvcreate:
               # create logical volume
               command: lvcreate -l 100%FREE -n elysian vg0
-            4_mkfs:
+            3_mkfs:
               # create ext4 file system
               command: mkfs.ext4 /dev/vg0/elysian
-            5_mkdir:
-              # make the /var/app directory
-              command: mkdir data
-              cwd: "/home/ec2-user/elysian"
-            6_fstab:
+            4_mkdir:
+              # make the persistent-volume directory
+              command: mkdir persistent-volume
+              cwd: "/home/ec2-user"
+            5_fstab:
               # add the mount point to the /etc/fstab file so it will be mounted on system boot
-              command: echo "/dev/mapper/vg0-elysian /home/ec2-user/elysian/data ext4 defaults 0 2" >> /etc/fstab
-            7_mount:
+              command: echo "/dev/mapper/vg0-elysian /home/ec2-user/persistent-volume ext4 defaults 0 2" >> /etc/fstab
+            6_mount:
               # mount the newly added logical volume to the /var/myapp directory
               command: mount -a
+            7_mkdir_persistent_data:
+              # make the persistent-volume data directory
+              command: mkdir data
+              cwd: "/home/ec2-user/persistent-volume"
+            8_mkdir_persistent_backup:
+              # make the persistent-volume backup directory
+              command: mkdir backup
+              cwd: "/home/ec2-user/persistent-volume"
+            9_link_data:
+              # make the persistent-volume backup directory
+              command: ln -s /home/ec2-user/persistent-volume/data data
+              cwd: "/home/ec2-user/elysian"
+            10_link_backup:
+              # make the persistent-volume backup directory
+              command: ln -s /home/ec2-user/persistent-volume/backup backup
+              cwd: "/home/ec2-user/elysian"
         DeployElysian:
           commands:
             docker-compose-elysian:
@@ -156,12 +150,10 @@ Resources:
                 HOME: "/home/ec2-user/elysian"
     Properties:
       InstanceType: t2.micro
-      ImageId: !FindInMap
-        - AWSRegionArch2AMI
-        - !Ref 'AWS::Region'
-        - HVM64
+      ImageId: !FindInMap [AWSRegionMap, !Ref "AWS::Region", HVM64]
       KeyName:
         Ref: KeyName
+      Monitoring: true
       NetworkInterfaces:
         - GroupSet:
             - !ImportValue
@@ -171,15 +163,13 @@ Resources:
           DeleteOnTermination: true
           SubnetId: !ImportValue
             'Fn::Sub': '${NetworkStackName}-SubnetID'
-# >>>
       BlockDeviceMappings:
         # Create a separate volume
-        - DeviceName: /dev/sdf
+        - DeviceName: "/dev/sdf"
           Ebs:
-            DeleteOnTermination: true
-            # Encrypted: true
-            VolumeSize: 8
-# <<<
+            DeleteOnTermination: false
+            VolumeSize: 16
+            VolumeType: gp2
       UserData:
         Fn::Base64: !Sub |
          #!/usr/bin/env bash
@@ -190,6 +180,8 @@ Resources:
       Tags:
         - Key: Application
           Value: !Ref 'AWS::StackId'
+        - Key: "Stack"
+          Value: !Ref 'AWS::StackName'
     CreationPolicy:
       ResourceSignal:
         Timeout: PT5M
@@ -209,6 +201,7 @@ Resources:
     Properties:
       InstanceId: !Ref EC2DockerhostInstance
       EIP: !Ref IPAddress
+
 Outputs:
   URL:
     Description: URL at which public access is possible
