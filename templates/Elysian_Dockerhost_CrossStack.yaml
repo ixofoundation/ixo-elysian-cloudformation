@@ -71,10 +71,10 @@ Resources:
       'AWS::CloudFormation::Init':
         configSets:
           All:
-            # - PrepareDocker
-            # - PrepareElysian
+            - PrepareDocker
+            - PrepareElysian
             - PreparePersistentFilesystemLinkingScript
-            # - DeployElysian
+            - DeployElysian
         PrepareDocker:
           packages:
             yum:
@@ -111,6 +111,12 @@ Resources:
             extract-docker-compose:
               command: cp ixo-pds-repository/docker-compose.yml elysian/
               cwd: "/home/ec2-user"
+            extract-docker-compose-beta:
+              command: cp ixo-pds-repository/docker-compose.beta.yml elysian/
+              cwd: "/home/ec2-user"
+            extract-docker-compose-dev:
+              command: cp ixo-pds-repository/docker-compose.dev.yml elysian/
+              cwd: "/home/ec2-user"
             extract-docker-compose-prod:
               command: cp ixo-pds-repository/docker-compose.prod.yml elysian/
               cwd: "/home/ec2-user"
@@ -125,27 +131,7 @@ Resources:
               cwd: "/home/ec2-user"
         PreparePersistentFilesystemLinkingScript:
           files:
-            # "/tmp/ensure-volume-filesystem.sh":
-            #   content: !Sub |
-            #     #!/bin/bash
-            #
-            #     X="$(sudo file -s /dev/xvdf)"
-            #
-            #     if [ "$X" = "/dev/xvdf: data" ]
-            #     then
-            #       sudo mkfs -t ext4 /dev/xvdf
-            #     fi
-            #   mode: '000777'
-            #   owner: root
-            #   group: root
-            # # commands:
-            # #   execute-mount-script:
-            # #     command: ./ensure-volume-filesystem.sh
-            # #     cwd: "/home/ec2-user"
-            # #   trash-mount-script:
-            # #     command: rm ensure-volume-filesystem.sh
-            # #     cwd: "/home/ec2-user"
-            "/tmp/wait-for-volume-and-format.sh":
+            "/tmp/wait-for-volume-and-format-filesystem.sh":
               content: !Sub |
                 #!/bin/bash -xe
                 #
@@ -176,13 +162,22 @@ Resources:
 
                 # Persist the volume in /etc/fstab so it gets mounted again
                 echo '/dev/xvdf /persistent-volume ext4 defaults,nofail 0 2' >> /etc/fstab
+
+                mkdir /persistent-volume/data
+                mkdir /persistent-volume/backup
               mode: '000777'
               owner: root
               group: root
         DeployElysian:
           commands:
+            create-symlink-backup-volume:
+              command: ln -s /persistent-volume/backup backup
+              cwd: "/home/ec2-user/elysian"
+            create-symlink-data-volume:
+              command: ln -s /persistent-volume/data data
+              cwd: "/home/ec2-user/elysian"
             docker-compose-elysian:
-              command: ./start.sh prod
+              command: ./start.sh beta
               cwd: "/home/ec2-user/elysian/bin"
               env:
                 HOME: "/home/ec2-user/elysian"
@@ -207,22 +202,14 @@ Resources:
       UserData:
         Fn::Base64: !Sub |
          #!/usr/bin/env bash
-         echo "in UserData"
+
          set -o errexit
          yum -y update aws-cfn-bootstrap
          /opt/aws/bin/cfn-init -v --resource EC2DockerhostInstance --configsets All --stack ${AWS::StackName} --region ${AWS::Region}
 
-         whoami
-         echo "111"
+         /tmp/wait-for-volume-and-format-filesystem.sh
          lsblk
-         echo "222"
-         file -s /dev/xvdf
-         # /home/ec2-user/ensure-volume-filesystem.sh
-         echo "333"
-         /tmp/wait-for-volume-and-format.sh
-         echo "444"
-         file -s /dev/xvdf
-         echo "555"
+         rm /tmp/wait-for-volume-and-format-filesystem.sh
 
          # rm /home/ec2-user/ensure-volume-filesystem.sh
          /opt/aws/bin/cfn-signal --exit-code $? --stack ${AWS::StackName} --resource EC2DockerhostInstance --region ${AWS::Region}
@@ -243,8 +230,10 @@ Resources:
         # H is the hour designator that follows the value for the number of hours.
         # M is the minute designator that follows the value for the number of minutes.
         # S is the second designator that follows the value for the number of seconds.
+
   IPAddress:
     Type: 'AWS::EC2::EIP'
+
   IPAssoc:
     Type: 'AWS::EC2::EIPAssociation'
     Properties:
