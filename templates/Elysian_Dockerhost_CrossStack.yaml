@@ -43,6 +43,27 @@ Mappings:
     cn-north-1:
       HVM64: ami-05a66c68
 Resources:
+
+  PersistentVolume:
+    Type: AWS::EC2::Volume
+    DeletionPolicy: Delete
+    Properties:
+      AvailabilityZone: !ImportValue
+        'Fn::Sub': '${NetworkStackName}-AvailabilityZone'
+      Size: 4
+      Tags:
+        - Key: "Name"
+          Value: !Join [ '-', [ !Ref 'AWS::StackName', 'PersistentVolume' ] ]
+        - Key: "Stack"
+          Value: !Ref 'AWS::StackName'
+
+  # MountPoint:
+  #   Type: AWS::EC2::VolumeAttachment
+  #   Properties:
+  #     InstanceId: !Ref EC2DockerhostInstance
+  #     VolumeId: !Ref PersistentVolume
+  #     Device: /dev/sdf
+
   EC2DockerhostInstance:
     Type: 'AWS::EC2::Instance'
     Metadata:
@@ -50,9 +71,9 @@ Resources:
         configSets:
           All:
             - PrepareDocker
-            - PrepareElysian
-            - PreparePersistentFilesystem
-            - DeployElysian
+            # - PrepareElysian
+            # - PreparePersistentFilesystemLinkingScript
+            # - DeployElysian
         PrepareDocker:
           packages:
             yum:
@@ -101,46 +122,74 @@ Resources:
             remove-repository:
               command: rm -rf ixo-pds-repository
               cwd: "/home/ec2-user"
-        PreparePersistentFilesystem:
-          commands:
-            0_pvcreate:
-              # create LVM physical volume
-              command: pvcreate /dev/xvdf
-            1_vgcreate:
-              # create volume group
-              command: vgcreate vg0 /dev/xvdf
-            2_lvcreate:
-              # create logical volume
-              command: lvcreate -l 100%FREE -n elysian vg0
-            3_mkfs:
-              # create ext4 file system
-              command: mkfs.ext4 /dev/vg0/elysian
-            4_mkdir:
-              # make the persistent-volume directory
-              command: mkdir persistent-volume
-              cwd: "/home/ec2-user"
-            5_fstab:
-              # add the mount point to the /etc/fstab file so it will be mounted on system boot
-              command: echo "/dev/mapper/vg0-elysian /home/ec2-user/persistent-volume ext4 defaults 0 2" >> /etc/fstab
-            6_mount:
-              # mount the newly added logical volume to the /var/myapp directory
-              command: mount -a
-            7_mkdir_persistent_data:
-              # make the persistent-volume data directory
-              command: mkdir data
-              cwd: "/home/ec2-user/persistent-volume"
-            8_mkdir_persistent_backup:
-              # make the persistent-volume backup directory
-              command: mkdir backup
-              cwd: "/home/ec2-user/persistent-volume"
-            9_link_data:
-              # make the persistent-volume backup directory
-              command: ln -s /home/ec2-user/persistent-volume/data data
-              cwd: "/home/ec2-user/elysian"
-            10_link_backup:
-              # make the persistent-volume backup directory
-              command: ln -s /home/ec2-user/persistent-volume/backup backup
-              cwd: "/home/ec2-user/elysian"
+        # PreparePersistentFilesystemLinkingScript:
+        #   files:
+        #     # "/tmp/ensure-volume-filesystem.sh":
+        #     #   content: !Sub |
+        #     #     #!/bin/bash
+        #     #
+        #     #     X="$(sudo file -s /dev/xvdf)"
+        #     #
+        #     #     if [ "$X" = "/dev/xvdf: data" ]
+        #     #     then
+        #     #       sudo mkfs -t ext4 /dev/xvdf
+        #     #     fi
+        #     #   mode: '000777'
+        #     #   owner: root
+        #     #   group: root
+        #     # # commands:
+        #     # #   execute-mount-script:
+        #     # #     command: ./ensure-volume-filesystem.sh
+        #     # #     cwd: "/home/ec2-user"
+        #     # #   trash-mount-script:
+        #     # #     command: rm ensure-volume-filesystem.sh
+        #     # #     cwd: "/home/ec2-user"
+        #     "/tmp/wait-for-volume-and-format.sh":
+        #       content: !Sub |
+        #         #!/bin/bash -xe
+        #         #
+        #         # See: http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-using-volumes.html
+        #         #
+        #         # Make sure volume has been created AND attached to this instance !
+        #         #
+        #         # We do not need a loop counter in the "until" statements below because
+        #         # there is a 5 minute limit on the CreationPolicy for this EC2 instance already.
+        #
+        #         EC2_INSTANCE_ID=$1
+        #         echo "*** EC2_INSTANCE_ID: $EC2_INSTANCE_ID"
+        #         AWS_REGION=$2
+        #         echo "*** AWS_REGION: $AWS_REGION"
+        #
+        #         # ######################################################################
+        #         # # Volume /dev/sdf (which will get created as /dev/xvdf on Amazon Linux)
+        #         #
+        #         # DATA_STATE="unknown"
+        #         # until [ "${!DATA_STATE}" == "attached" ]; do
+        #         #   DATA_STATE=$(aws ec2 describe-volumes \
+        #         #     --region $AWS_REGION \
+        #         #     --filters \
+        #         #         Name=attachment.instance-id,Values=$EC2_INSTANCE_ID \
+        #         #         Name=attachment.device,Values=/dev/sdf \
+        #         #     --query Volumes[].Attachments[].State \
+        #         #     --output text)
+        #         #
+        #         #   sleep 5
+        #         # done
+        #         #
+        #         # # Format /dev/xvdf if it does not contain a partition yet
+        #         # if [ "$(file -b -s /dev/xvdf)" == "data" ]; then
+        #         #   mkfs -t ext4 /dev/xvdf
+        #         # fi
+        #         #
+        #         # mkdir -p /persistent-volume
+        #         # mount /dev/xvdf /persistent-volume
+        #         #
+        #         # # Persist the volume in /etc/fstab so it gets mounted again
+        #         # echo '/dev/xvdf /persistent-volume ext4 defaults,nofail 0 2' >> /etc/fstab
+        #
+        #       mode: '000777'
+        #       owner: root
+        #       group: root
         DeployElysian:
           commands:
             docker-compose-elysian:
@@ -163,19 +212,25 @@ Resources:
           DeleteOnTermination: true
           SubnetId: !ImportValue
             'Fn::Sub': '${NetworkStackName}-SubnetID'
-      BlockDeviceMappings:
-        # Create a separate volume
-        - DeviceName: "/dev/sdf"
-          Ebs:
-            DeleteOnTermination: false
-            VolumeSize: 16
-            VolumeType: gp2
       UserData:
         Fn::Base64: !Sub |
          #!/usr/bin/env bash
+         echo "in UserData"
          set -o errexit
          yum -y update aws-cfn-bootstrap
-         /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource EC2DockerhostInstance --configsets All --region ${AWS::Region}
+         /opt/aws/bin/cfn-init -v --resource EC2DockerhostInstance --configsets All --stack ${AWS::StackName} --region ${AWS::Region}
+
+         whoami
+         echo "111"
+         lsblk
+         echo "222"
+         file -s /dev/xvdf
+         # /home/ec2-user/ensure-volume-filesystem.sh
+         echo "333"
+         # /tmp/wait-for-volume-and-format.sh ${EC2DockerhostInstance} ${AWS::Region}
+         # echo "444"
+
+         # rm /home/ec2-user/ensure-volume-filesystem.sh
          /opt/aws/bin/cfn-signal --exit-code $? --stack ${AWS::StackName} --resource EC2DockerhostInstance --region ${AWS::Region}
       Tags:
         - Key: Application
@@ -184,7 +239,7 @@ Resources:
           Value: !Ref 'AWS::StackName'
     CreationPolicy:
       ResourceSignal:
-        Timeout: PT5M
+        Timeout: PT15M
         # P is the duration designator (for period) placed at the start of the duration representation.
         # Y is the year designator that follows the value for the number of years.
         # M is the month designator that follows the value for the number of months.
@@ -194,13 +249,13 @@ Resources:
         # H is the hour designator that follows the value for the number of hours.
         # M is the minute designator that follows the value for the number of minutes.
         # S is the second designator that follows the value for the number of seconds.
-  IPAddress:
-    Type: 'AWS::EC2::EIP'
-  IPAssoc:
-    Type: 'AWS::EC2::EIPAssociation'
-    Properties:
-      InstanceId: !Ref EC2DockerhostInstance
-      EIP: !Ref IPAddress
+  # IPAddress:
+  #   Type: 'AWS::EC2::EIP'
+  # IPAssoc:
+  #   Type: 'AWS::EC2::EIPAssociation'
+  #   Properties:
+  #     InstanceId: !Ref EC2DockerhostInstance
+  #     EIP: !Ref IPAddress
 
 Outputs:
   URL:
