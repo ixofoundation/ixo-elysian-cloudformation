@@ -54,7 +54,7 @@ Resources:
 
   PersistentVolume:
     Type: AWS::EC2::Volume
-    DeletionPolicy: Delete
+    DeletionPolicy: Retain
     Properties:
       AvailabilityZone: !ImportValue
         'Fn::Sub': '${NetworkStackName}-AvailabilityZone'
