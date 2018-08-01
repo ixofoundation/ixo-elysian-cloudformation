@@ -57,12 +57,12 @@ Resources:
         - Key: "Stack"
           Value: !Ref 'AWS::StackName'
 
-  # MountPoint:
-  #   Type: AWS::EC2::VolumeAttachment
-  #   Properties:
-  #     InstanceId: !Ref EC2DockerhostInstance
-  #     VolumeId: !Ref PersistentVolume
-  #     Device: /dev/sdf
+  MountPoint:
+    Type: AWS::EC2::VolumeAttachment
+    Properties:
+      InstanceId: !Ref EC2DockerhostInstance
+      VolumeId: !Ref PersistentVolume
+      Device: /dev/sdf
 
   EC2DockerhostInstance:
     Type: 'AWS::EC2::Instance'
@@ -70,9 +70,9 @@ Resources:
       'AWS::CloudFormation::Init':
         configSets:
           All:
-            - PrepareDocker
+            # - PrepareDocker
             # - PrepareElysian
-            # - PreparePersistentFilesystemLinkingScript
+            - PreparePersistentFilesystemLinkingScript
             # - DeployElysian
         PrepareDocker:
           packages:
@@ -122,74 +122,73 @@ Resources:
             remove-repository:
               command: rm -rf ixo-pds-repository
               cwd: "/home/ec2-user"
-        # PreparePersistentFilesystemLinkingScript:
-        #   files:
-        #     # "/tmp/ensure-volume-filesystem.sh":
-        #     #   content: !Sub |
-        #     #     #!/bin/bash
-        #     #
-        #     #     X="$(sudo file -s /dev/xvdf)"
-        #     #
-        #     #     if [ "$X" = "/dev/xvdf: data" ]
-        #     #     then
-        #     #       sudo mkfs -t ext4 /dev/xvdf
-        #     #     fi
-        #     #   mode: '000777'
-        #     #   owner: root
-        #     #   group: root
-        #     # # commands:
-        #     # #   execute-mount-script:
-        #     # #     command: ./ensure-volume-filesystem.sh
-        #     # #     cwd: "/home/ec2-user"
-        #     # #   trash-mount-script:
-        #     # #     command: rm ensure-volume-filesystem.sh
-        #     # #     cwd: "/home/ec2-user"
-        #     "/tmp/wait-for-volume-and-format.sh":
-        #       content: !Sub |
-        #         #!/bin/bash -xe
-        #         #
-        #         # See: http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-using-volumes.html
-        #         #
-        #         # Make sure volume has been created AND attached to this instance !
-        #         #
-        #         # We do not need a loop counter in the "until" statements below because
-        #         # there is a 5 minute limit on the CreationPolicy for this EC2 instance already.
-        #
-        #         EC2_INSTANCE_ID=$1
-        #         echo "*** EC2_INSTANCE_ID: $EC2_INSTANCE_ID"
-        #         AWS_REGION=$2
-        #         echo "*** AWS_REGION: $AWS_REGION"
-        #
-        #         # ######################################################################
-        #         # # Volume /dev/sdf (which will get created as /dev/xvdf on Amazon Linux)
-        #         #
-        #         # DATA_STATE="unknown"
-        #         # until [ "${!DATA_STATE}" == "attached" ]; do
-        #         #   DATA_STATE=$(aws ec2 describe-volumes \
-        #         #     --region $AWS_REGION \
-        #         #     --filters \
-        #         #         Name=attachment.instance-id,Values=$EC2_INSTANCE_ID \
-        #         #         Name=attachment.device,Values=/dev/sdf \
-        #         #     --query Volumes[].Attachments[].State \
-        #         #     --output text)
-        #         #
-        #         #   sleep 5
-        #         # done
-        #         #
-        #         # # Format /dev/xvdf if it does not contain a partition yet
-        #         # if [ "$(file -b -s /dev/xvdf)" == "data" ]; then
-        #         #   mkfs -t ext4 /dev/xvdf
-        #         # fi
-        #         #
-        #         # mkdir -p /persistent-volume
-        #         # mount /dev/xvdf /persistent-volume
-        #         #
-        #         # # Persist the volume in /etc/fstab so it gets mounted again
-        #         # echo '/dev/xvdf /persistent-volume ext4 defaults,nofail 0 2' >> /etc/fstab
-        #
-        #       mode: '000777'
-        #       owner: root
-        #       group: root
+        PreparePersistentFilesystemLinkingScript:
+          files:
+            # "/tmp/ensure-volume-filesystem.sh":
+            #   content: !Sub |
+            #     #!/bin/bash
+            #
+            #     X="$(sudo file -s /dev/xvdf)"
+            #
+            #     if [ "$X" = "/dev/xvdf: data" ]
+            #     then
+            #       sudo mkfs -t ext4 /dev/xvdf
+            #     fi
+            #   mode: '000777'
+            #   owner: root
+            #   group: root
+            # # commands:
+            # #   execute-mount-script:
+            # #     command: ./ensure-volume-filesystem.sh
+            # #     cwd: "/home/ec2-user"
+            # #   trash-mount-script:
+            # #     command: rm ensure-volume-filesystem.sh
+            # #     cwd: "/home/ec2-user"
+            "/tmp/wait-for-volume-and-format.sh":
+              content: !Sub |
+                #!/bin/bash -xe
+                #
+                # See: http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-using-volumes.html
+                #
+                # Make sure volume has been created AND attached to this instance !
+                #
+                # We do not need a loop counter in the "until" statements below because
+                # there is a 5 minute limit on the CreationPolicy for this EC2 instance already.
+
+                EC2_INSTANCE_ID=$(curl -s http://instance-data/latest/meta-data/instance-id)
+                echo "*** EC2_INSTANCE_ID: $EC2_INSTANCE_ID"
+                AWS_REGION=$1
+                echo "*** AWS_REGION: $AWS_REGION"
+
+                ######################################################################
+                # Volume /dev/sdf (which will get created as /dev/xvdf on Amazon Linux)
+
+                DATA_STATE="unknown"
+                until [ "${!DATA_STATE}" == "attached" ]; do
+                  DATA_STATE=$(aws ec2 describe-volumes \
+                    --region $AWS_REGION \
+                    --filters \
+                        Name=attachment.instance-id,Values=$EC2_INSTANCE_ID \
+                        Name=attachment.device,Values=/dev/sdf \
+                    --query Volumes[].Attachments[].State \
+                    --output text)
+
+                  sleep 5
+                done
+
+                # Format /dev/xvdf if it does not contain a partition yet
+                if [ "$(file -b -s /dev/xvdf)" == "data" ]; then
+                  mkfs -t ext4 /dev/xvdf
+                fi
+
+                mkdir -p /persistent-volume
+                mount /dev/xvdf /persistent-volume
+
+                # Persist the volume in /etc/fstab so it gets mounted again
+                echo '/dev/xvdf /persistent-volume ext4 defaults,nofail 0 2' >> /etc/fstab
+              mode: '000777'
+              owner: root
+              group: root
         DeployElysian:
           commands:
             docker-compose-elysian:
@@ -227,8 +226,10 @@ Resources:
          file -s /dev/xvdf
          # /home/ec2-user/ensure-volume-filesystem.sh
          echo "333"
-         # /tmp/wait-for-volume-and-format.sh ${EC2DockerhostInstance} ${AWS::Region}
-         # echo "444"
+         /tmp/wait-for-volume-and-format.sh ${AWS::Region}
+         echo "444"
+         file -s /dev/xvdf
+         echo "555"
 
          # rm /home/ec2-user/ensure-volume-filesystem.sh
          /opt/aws/bin/cfn-signal --exit-code $? --stack ${AWS::StackName} --resource EC2DockerhostInstance --region ${AWS::Region}
@@ -249,13 +250,13 @@ Resources:
         # H is the hour designator that follows the value for the number of hours.
         # M is the minute designator that follows the value for the number of minutes.
         # S is the second designator that follows the value for the number of seconds.
-  # IPAddress:
-  #   Type: 'AWS::EC2::EIP'
-  # IPAssoc:
-  #   Type: 'AWS::EC2::EIPAssociation'
-  #   Properties:
-  #     InstanceId: !Ref EC2DockerhostInstance
-  #     EIP: !Ref IPAddress
+  IPAddress:
+    Type: 'AWS::EC2::EIP'
+  IPAssoc:
+    Type: 'AWS::EC2::EIPAssociation'
+    Properties:
+      InstanceId: !Ref EC2DockerhostInstance
+      EIP: !Ref IPAddress
 
 Outputs:
   URL:
