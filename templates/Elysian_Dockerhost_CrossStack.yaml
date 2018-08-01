@@ -70,10 +70,11 @@ Resources:
     Metadata:
       'AWS::CloudFormation::Init':
         configSets:
-          All:
+          Prepare:
             - PrepareDocker
             - PrepareElysian
             - PreparePersistentFilesystemLinkingScript
+          Deploy:
             - DeployElysian
         PrepareDocker:
           packages:
@@ -160,11 +161,14 @@ Resources:
                 mkdir -p /persistent-volume
                 mount /dev/xvdf /persistent-volume
 
+                mkdir /persistent-volume/backup
+                mkdir /persistent-volume/data
+                chmod -R ugo+r+w+x persistent-volume
+
                 # Persist the volume in /etc/fstab so it gets mounted again
                 echo '/dev/xvdf /persistent-volume ext4 defaults,nofail 0 2' >> /etc/fstab
 
-                mkdir /persistent-volume/data
-                mkdir /persistent-volume/backup
+                lsblk
               mode: '000777'
               owner: root
               group: root
@@ -173,8 +177,14 @@ Resources:
             create-symlink-backup-volume:
               command: ln -s /persistent-volume/backup backup
               cwd: "/home/ec2-user/elysian"
+            create-symlink-backup-volume-permissions:
+              command: chmod -R ugo+r+w+x backup
+              cwd: "/home/ec2-user/elysian"
             create-symlink-data-volume:
               command: ln -s /persistent-volume/data data
+              cwd: "/home/ec2-user/elysian"
+            create-symlink-data-volume-permissions:
+              command: chmod -R ugo+r+w+x data
               cwd: "/home/ec2-user/elysian"
             docker-compose-elysian:
               command: ./start.sh beta
@@ -205,11 +215,13 @@ Resources:
 
          set -o errexit
          yum -y update aws-cfn-bootstrap
-         /opt/aws/bin/cfn-init -v --resource EC2DockerhostInstance --configsets All --stack ${AWS::StackName} --region ${AWS::Region}
+
+         /opt/aws/bin/cfn-init -v --resource EC2DockerhostInstance --configsets Prepare --stack ${AWS::StackName} --region ${AWS::Region}
 
          /tmp/wait-for-volume-and-format-filesystem.sh
-         lsblk
          rm /tmp/wait-for-volume-and-format-filesystem.sh
+
+         /opt/aws/bin/cfn-init -v --resource EC2DockerhostInstance --configsets Deploy --stack ${AWS::StackName} --region ${AWS::Region}
 
          # rm /home/ec2-user/ensure-volume-filesystem.sh
          /opt/aws/bin/cfn-signal --exit-code $? --stack ${AWS::StackName} --resource EC2DockerhostInstance --region ${AWS::Region}
