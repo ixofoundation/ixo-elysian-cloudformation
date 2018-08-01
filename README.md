@@ -1,4 +1,4 @@
-# [IXO][website-url] :heavy_plus_sign: [AWS CloudFormation](https://aws.amazon.com/cloudformation/)
+# [ixo Elysian][website-url] :heavy_plus_sign: [AWS CloudFormation](https://aws.amazon.com/cloudformation/)
 
 [Website][website-url] |
 [Documentation](https://getkong.org/docs) |
