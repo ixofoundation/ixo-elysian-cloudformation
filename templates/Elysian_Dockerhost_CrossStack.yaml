@@ -18,6 +18,14 @@ Parameters:
     Description: Name of an existing EC2 KeyPair to enable SSH access to the instance
     Type: 'AWS::EC2::KeyPair::KeyName'
     ConstraintDescription: must be the name of an existing EC2 KeyPair.
+  InstanceType:
+    Description: WebServer EC2 instance type (has default, AllowedValues)
+    Type: String
+    Default: t2.small
+    AllowedValues:
+      - t2.nano
+      - t2.micro
+      - t2.small
 Mappings:
   AWSRegionMap:
     us-east-1:
@@ -56,13 +64,6 @@ Resources:
           Value: !Join [ '-', [ !Ref 'AWS::StackName', 'PersistentVolume' ] ]
         - Key: "Stack"
           Value: !Ref 'AWS::StackName'
-
-  MountPoint:
-    Type: AWS::EC2::VolumeAttachment
-    Properties:
-      InstanceId: !Ref EC2DockerhostInstance
-      VolumeId: !Ref PersistentVolume
-      Device: /dev/sdf
 
   EC2DockerhostInstance:
     Type: 'AWS::EC2::Instance'
@@ -155,24 +156,13 @@ Resources:
                 # We do not need a loop counter in the "until" statements below because
                 # there is a 5 minute limit on the CreationPolicy for this EC2 instance already.
 
-                EC2_INSTANCE_ID=$(curl -s http://instance-data/latest/meta-data/instance-id)
-                echo "*** EC2_INSTANCE_ID: $EC2_INSTANCE_ID"
-                AWS_REGION=$1
-                echo "*** AWS_REGION: $AWS_REGION"
 
                 ######################################################################
                 # Volume /dev/sdf (which will get created as /dev/xvdf on Amazon Linux)
 
-                DATA_STATE="unknown"
-                until [ "${!DATA_STATE}" == "attached" ]; do
-                  DATA_STATE=$(aws ec2 describe-volumes \
-                    --region $AWS_REGION \
-                    --filters \
-                        Name=attachment.instance-id,Values=$EC2_INSTANCE_ID \
-                        Name=attachment.device,Values=/dev/sdf \
-                    --query Volumes[].Attachments[].State \
-                    --output text)
-
+                while [ ! -e /dev/sdf ];
+                do
+                  echo waiting for /dev/sdf to attach
                   sleep 5
                 done
 
@@ -197,7 +187,7 @@ Resources:
               env:
                 HOME: "/home/ec2-user/elysian"
     Properties:
-      InstanceType: t2.micro
+      InstanceType: !Ref InstanceType
       ImageId: !FindInMap [AWSRegionMap, !Ref "AWS::Region", HVM64]
       KeyName:
         Ref: KeyName
@@ -211,6 +201,9 @@ Resources:
           DeleteOnTermination: true
           SubnetId: !ImportValue
             'Fn::Sub': '${NetworkStackName}-SubnetID'
+      Volumes:
+        - VolumeId: !Ref PersistentVolume
+          Device: /dev/sdf
       UserData:
         Fn::Base64: !Sub |
          #!/usr/bin/env bash
@@ -226,7 +219,7 @@ Resources:
          file -s /dev/xvdf
          # /home/ec2-user/ensure-volume-filesystem.sh
          echo "333"
-         /tmp/wait-for-volume-and-format.sh ${AWS::Region}
+         /tmp/wait-for-volume-and-format.sh
          echo "444"
          file -s /dev/xvdf
          echo "555"
