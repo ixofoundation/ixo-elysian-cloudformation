@@ -15,9 +15,10 @@ resources in AWS easily.
 
 Note: A prerequisite for the <B>Elysian_Dockerhost_CrossStack</B> template to be
 used in the creation of a stack is for a VPC & Subnet to exist with a set of predefined
-outputs for consumption from stacks subsequently created.  The
-<B>Elysian_VPC_Subnet_CrossStack</B> template creates the basic networking infrastructure
-and exports the following for cross-stack consumption:
+outputs as done from the <B>Elysian_VPC_Subnet_CrossStack</B> CFN template.
+
+Subsequent to the basic networking <B>Resources</B> being created by the <B>Elysian_VPC_Subnet_CrossStack</B> CFN template
+the following <B>Outputs</B> are provided for cross-stack consumption:
 
 ```yaml
 Outputs:
