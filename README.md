@@ -2,8 +2,10 @@
 
 [Website][website-url]
 |
-[Documentation](https://getkong.org/docs) |
-[Forum](https://discuss.konghq.com) |
+[Documentation](https://getkong.org/docs)
+|
+[Forum](https://discuss.konghq.com)
+|
 [Blog](https://konghq.com/blog)
 
 [![][ixo-logo]][website-url]
