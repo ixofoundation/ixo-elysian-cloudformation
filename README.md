@@ -1,29 +1,59 @@
 # [ixo Elysian][website-url] :heavy_plus_sign: [AWS CloudFormation](https://aws.amazon.com/cloudformation/)
 
-[Website][website-url]
+[Foundation][website-url]
 |
-[Documentation](https://getkong.org/docs)
+[Elysian Source](https://github.com/ixofoundation/ixo-pds)
 |
-[Forum](https://discuss.konghq.com)
+[White Paper](https://medium.com/ixo-blog/elysian-release-7279ee9c49bc)
 |
-[Blog](https://konghq.com/blog)
+[Blog](https://medium.com/ixo-blog)
 
 [![][ixo-logo]][website-url]
 
-This CloudFormation template helps you model and set up Kong's
+These CloudFormation templates help you model and set up Elysian's
 resources in AWS easily.
 
-Note: For Kong's 0.10.x and older versions template please
-check out the 4.0.0 or older tags.
+Note: A prerequisite for the <B>Elysian_Dockerhost_CrossStack</B> template to be
+used in the creation of a stack is for a VPC & Subnet to exist with a set of predefined
+outputs for consumption from stacks subsequently created.  The
+<B>Elysian_VPC_Subnet_CrossStack</B> template creates the basic networking infrastructure
+and exports the following for cross-stack consumption:
+
+```yaml
+Outputs:
+  VPCId:
+    Description: VPC ID
+    Value: !Ref VPC
+    Export:
+      Name: !Sub '${AWS::StackName}-VPCID'
+  PublicSubnet:
+    Description: The subnet ID to use for public web servers
+    Value: !Ref PublicSubnet
+    Export:
+      Name: !Sub '${AWS::StackName}-SubnetID'
+  InstanceSecurityGroup:
+    Description: The security group ID to use for public servers
+    Value: !GetAtt
+      - InstanceSecurityGroup
+      - GroupId
+    Export:
+      Name: !Sub '${AWS::StackName}-SecurityGroupID'
+  AvailabilityZone:
+    Description: The availability zone to use for volumes
+    Value: !GetAtt
+      - PublicSubnet
+      - AvailabilityZone
+    Export:
+      Name: !Sub '${AWS::StackName}-AvailabilityZone'
+```
 
 ## Summary
 
 You have option to chose between two templates:
 
-###  1) Kong with Cassandra DB (you need to bring yours own Cassandra cluster)
+###  1) Create the cross-stack Network stack
 
-Provisions Kong resources with user provided Cassandra seed nodes
-in a new VPC or existing VPC.
+This is accomplished by using the
 
 | Region            | HVM AMIs                                                           | PV AMIs                                                          |
 | ----------------: | ------------------------------------------------------------------ | ---------------------------------------------------------------- |
