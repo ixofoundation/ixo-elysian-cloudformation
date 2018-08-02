@@ -15,29 +15,28 @@ resources in AWS easily.
 
 ## Quickstart
 
-Note: A prerequisite for the <B>Elysian_Dockerhost_CrossStack</B> template to be
+Note: A prerequisite for the <B>Elysian-Dockerhost-Stack</B> template to be
 used in the creation of a stack is for a VPC & Subnet to exist with a set of predefined
-outputs as done from the <B>Elysian_VPC_Subnet_CrossStack</B> CFN template.
+outputs as done from the <B>Elysian-Networking-Stack</B> CFN template.
 
 ###  [AWS CloudFormation Designer](https://console.aws.amazon.com/cloudformation/designer/home)
-| Region            | HVM AMIs                                                                 |
-| ----------------: | ------------------------------------------------------------------------ |
-| `us-east-1`       | [![ixo Elysian Stack launch][stack-badge]][us-east-1-hvm-stack-url]      |
-| `us-west-1`       | [![ixo Elysian Stack launch][stack-badge]][us-west-1-hvm-stack-url]      |
-| `us-west-2`       | [![ixo Elysian Stack launch][stack-badge]][us-west-2-hvm-stack-url]      |
-| `eu-west-1`       | [![ixo Elysian Stack launch][stack-badge]][eu-west-1-hvm-stack-url]      |
-| `eu-central-1`    | [![ixo Elysian Stack launch][stack-badge]][eu-central-1-hvm-stack-url]   |
-| `ap-northeast-1`  | [![ixo Elysian Stack launch][stack-badge]][ap-southeast-1-hvm-stack-url] |
-| `ap-northeast-2`  | [![ixo Elysian Stack launch][stack-badge]][ap-southeast-2-hvm-stack-url] |
-| `ap-southeast-1`  | [![ixo Elysian Stack launch][stack-badge]][sa-east-1-hvm-stack-url]      |
-| `ap-southeast-2`  | [![ixo Elysian Stack launch][stack-badge]][ap-southeast-2-hvm-stack-url] |
-| `sa-east-1`       | [![ixo Elysian Stack launch][stack-badge]][sa-east-1-hvm-stack-url]      |
-| `cn-north-1`      | [![ixo Elysian Stack launch][stack-badge]][cn-north-1-hvm-stack-url]     |
+
+1. **Create the global Elysian-Networking-Stack networking stack**:
+
+| Region            | HVM AMIs                                                                                 |
+| ----------------: | ---------------------------------------------------------------------------------------- |
+| `us-east-1`       | [![ixo Elysian Stack launch][stack-badge]][us-east-1-Elysian-Networking-Stack-url]      |
+
+2. **Create the Elysian ixo PDS Elysian-Dockerhost-Stack host stack**:
+
+| Region            | HVM AMIs                                                                                 |
+| ----------------: | ---------------------------------------------------------------------------------------- |
+| `us-east-1`       | [![Elysian-Dockerhost-Instance Stack launch][stack-badge]][us-east-1-Elysian-Dockerhost-Stack-url]      |
 
 ###  [AWS CLI](https://aws.amazon.com/cli)
 
 
-Subsequent to the basic networking <B>Resources</B> being created by the <B>Elysian_VPC_Subnet_CrossStack</B> CFN template
+Subsequent to the basic networking <B>Resources</B> being created by the <B>Elysian-Networking-Stack</B> CFN template
 the following <B>Outputs</B> are provided for cross-stack consumption:
 
 ```yaml
@@ -70,10 +69,10 @@ Outputs:
 
 ## Summary
 
-First create the cross-stack Network stack by means of <B>templates/Elysian_VPC_Subnet_CrossStack.yaml</B>
+First create the cross-stack Network stack by means of <B>templates/Elysian-Networking-Stack.yaml</B>
 and then create a Elysian ixo PDS Docker host by means of <B>templates/Elysian_Dockerhost_CrossStack.yaml</B>
 
-This is accomplished by using the <B>templates/Elysian_VPC_Subnet_CrossStack.yaml</B> CFN tempate,
+This is accomplished by using the <B>templates/Elysian-Networking-Stack.yaml</B> CFN tempate,
 and can happen either by means of the
 [AWS CLI](https://aws.amazon.com/cli) or the
 [AWS CloudFormation Designer](https://console.aws.amazon.com/cloudformation/designer/home?region=us-east-1)
@@ -151,13 +150,7 @@ $ aws cloudformation create-stack --stack-name Elysian-VPC-Subnet-Stack --templa
 [ixo-logo]: https://ixo.foundation/wp-content/uploads/2018/01/ixo-Cyan@2x.png
 [website-url]: https://ixo.foundation
 
-[us-east-1-hvm-stack-url]: https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=kong-elb-hvm&templateURL=https:%2F%2Fs3.amazonaws.com%2Fkong-cf-templates%2Flatest%2Fkong-elb-cassandra-user-vpc-optional-hvm.template
-[us-west-1-hvm-stack-url]: https://console.aws.amazon.com/cloudformation/home?region=us-west-1#/stacks/new?stackName=kong-elb-hvm&templateURL=https:%2F%2Fs3.amazonaws.com%2Fkong-cf-templates%2Flatest%2Fkong-elb-cassandra-user-vpc-optional-hvm.template
-[us-west-2-hvm-stack-url]: https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?stackName=kong-elb-hvm&templateURL=https:%2F%2Fs3.amazonaws.com%2Fkong-cf-templates%2Flatest%2Fkong-elb-cassandra-user-vpc-optional-hvm.template
-[eu-west-1-hvm-stack-url]: https://console.aws.amazon.com/cloudformation/home?region=eu-west-1#/stacks/new?stackName=kong-elb-hvm&templateURL=https:%2F%2Fs3.amazonaws.com%2Fkong-cf-templates%2Flatest%2Fkong-elb-cassandra-user-vpc-optional-hvm.template
-[ap-northeast-1-hvm-stack-url]: https://console.aws.amazon.com/cloudformation/home?region=ap-northeast-1#/stacks/new?stackName=kong-elb-hvm&templateURL=https:%2F%2Fs3.amazonaws.com%2Fkong-cf-templates%2Flatest%2Fkong-elb-cassandra-user-vpc-optional-hvm.template
-[ap-southeast-1-hvm-stack-url]: https://console.aws.amazon.com/cloudformation/home?region=ap-southeast-1#/stacks/new?stackName=kong-elb-hvm&templateURL=https:%2F%2Fs3.amazonaws.com%2Fkong-cf-templates%2Flatest%2Fkong-elb-cassandra-user-vpc-optional-hvm.template
-[ap-southeast-2-hvm-stack-url]: https://console.aws.amazon.com/cloudformation/home?region=ap-southeast-2#/stacks/new?stackName=kong-elb-hvm&templateURL=https:%2F%2Fs3.amazonaws.com%2Fkong-cf-templates%2Flatest%2Fkong-elb-cassandra-user-vpc-optional-hvm.template
-[sa-east-1-hvm-stack-url]: https://console.aws.amazon.com/cloudformation/home?region=sa-east-1#/stacks/new?stackName=kong-elb-pv&templateURL=https:%2F%2Fs3.amazonaws.com%2Fkong-cf-templates%2Flatest%2Fkong-elb-cassandra-user-vpc-optional-hvm.template
+[us-east-1-Elysian-Networking-Stack-url]: https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=kong-elb-hvm&templateURL=https:%2F%2Fs3.amazonaws.com%2Fkong-cf-templates%2Flatest%2Fkong-elb-cassandra-user-vpc-optional-hvm.template
+[us-east-1-Elysian-Dockerhost-Stack-url]: https://console.aws.amazon.com/cloudformation/home?region=us-west-1#/stacks/new?stackName=kong-elb-hvm&templateURL=https:%2F%2Fs3.amazonaws.com%2Fkong-cf-templates%2Flatest%2Fkong-elb-cassandra-user-vpc-optional-hvm.template
 
 [stack-badge]: https://s3.amazonaws.com/cloudformation-examples/cloudformation-launch-stack.png

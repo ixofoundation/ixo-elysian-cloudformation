@@ -13,7 +13,7 @@ Parameters:
     MinLength: 1
     MaxLength: 255
     AllowedPattern: '^[a-zA-Z][-a-zA-Z0-9]*$'
-    Default: Elysian-VPC-Subnet-Stack
+    Default: Elysian-Networking-Stack
   KeyName:
     Description: Name of an existing EC2 KeyPair to enable SSH access to the instance
     Type: 'AWS::EC2::KeyPair::KeyName'
@@ -27,6 +27,14 @@ Parameters:
       - t2.nano
       - t2.micro
       - t2.small
+  EnvironmentType:
+    Description: Type of environment. Primarily determines which ports are mapped an exposed
+    Type: 'String'
+    Default: beta
+    AllowedValues:
+      - dev
+      - beta
+      - prod
 Mappings:
   AWSRegionMap:
     us-east-1:
@@ -59,7 +67,8 @@ Resources:
     Properties:
       AvailabilityZone: !ImportValue
         'Fn::Sub': '${NetworkStackName}-AvailabilityZone'
-      Size: 4
+      VolumeType: gp2
+      Size: 16
       Tags:
         - Key: "Name"
           Value: !Join [ '-', [ !Ref 'AWS::StackName', 'PersistentVolume' ] ]
@@ -188,7 +197,7 @@ Resources:
               command: chmod -R ugo+r+w+x data
               cwd: "/home/ec2-user/elysian"
             docker-compose-elysian:
-              command: ./start.sh beta
+              command: !Sub './start.sh ${EnvironmentType}'
               cwd: "/home/ec2-user/elysian/bin"
               env:
                 HOME: "/home/ec2-user/elysian"

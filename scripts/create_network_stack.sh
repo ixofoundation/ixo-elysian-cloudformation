@@ -1,3 +1,3 @@
 #!/bin/bash
 
-aws cloudformation create-stack --stack-name Elysian-VPC-Subnet-Stack --template-body file://templates/Elysian_VPC_Subnet_CrossStack.yaml --profile trustlab.cli --region us-east-1
+aws cloudformation create-stack --stack-name Elysian-Networking-Stack --template-body file://templates/Elysian-Networking-Stack.yaml --profile trustlab.cli --region us-east-1
