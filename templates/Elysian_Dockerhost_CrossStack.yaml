@@ -31,10 +31,10 @@ Mappings:
   AWSRegionMap:
     us-east-1:
       HVM64: ami-f5f41398
-    us-west-2:
-      HVM64: ami-d0f506b0
     us-west-1:
       HVM64: ami-6e84fa0e
+    us-west-2:
+      HVM64: ami-d0f506b0
     eu-west-1:
       HVM64: ami-b0ac25c3
     eu-central-1:
