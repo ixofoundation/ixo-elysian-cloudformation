@@ -49,11 +49,15 @@ Outputs:
 
 ## Summary
 
-You have option to chose between two templates:
+First create the cross-stack Network stack by means of <B>templates/Elysian_VPC_Subnet_CrossStack.yaml</B>
+and then create a Elysian ixo PDS Docker host by means of <B>templates/Elysian_Dockerhost_CrossStack.yaml</B>
 
 ###  1) Create the cross-stack Network stack
 
-This is accomplished by using the
+This is accomplished by using the <B>templates/Elysian_VPC_Subnet_CrossStack.yaml</B> CFN tempate,
+and can happen either by means of the
+[AWS CLI](https://aws.amazon.com/cli) or the
+[AWS CloudFormation Designer](https://console.aws.amazon.com/cloudformation/designer/home?region=us-east-1)
 
 | Region            | HVM AMIs                                                           | PV AMIs                                                          |
 | ----------------: | ------------------------------------------------------------------ | ---------------------------------------------------------------- |
