@@ -150,7 +150,7 @@ $ aws cloudformation create-stack --stack-name Elysian-VPC-Subnet-Stack --templa
 [ixo-logo]: https://ixo.foundation/wp-content/uploads/2018/01/ixo-Cyan@2x.png
 [website-url]: https://ixo.foundation
 
-[us-east-1-Elysian-Networking-Stack-url]: https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=kong-elb-hvm&templateURL=https:%2F%2Fs3.amazonaws.com%2Fkong-cf-templates%2Flatest%2Fkong-elb-cassandra-user-vpc-optional-hvm.template
-[us-east-1-Elysian-Dockerhost-Stack-url]: https://console.aws.amazon.com/cloudformation/home?region=us-west-1#/stacks/new?stackName=kong-elb-hvm&templateURL=https:%2F%2Fs3.amazonaws.com%2Fkong-cf-templates%2Flatest%2Fkong-elb-cassandra-user-vpc-optional-hvm.template
+[us-east-1-Elysian-Networking-Stack-url]: https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=Elysian-Networking-Stack&templateURL=https://s3.amazonaws.com/ixo-elysian-cfn-templates/Elysian-Networking-Stack.yaml
+[us-east-1-Elysian-Dockerhost-Stack-url]: https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=Elysian-Dockerhost-Stack&templateURL=https://s3.amazonaws.com/ixo-elysian-cfn-templates/Elysian_Dockerhost_CrossStack.yaml
 
 [stack-badge]: https://s3.amazonaws.com/cloudformation-examples/cloudformation-launch-stack.png
