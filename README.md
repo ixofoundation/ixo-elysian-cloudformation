@@ -13,9 +13,29 @@
 These CloudFormation templates help you model and set up Elysian's
 resources in AWS easily.
 
+## Quickstart
+
 Note: A prerequisite for the <B>Elysian_Dockerhost_CrossStack</B> template to be
 used in the creation of a stack is for a VPC & Subnet to exist with a set of predefined
 outputs as done from the <B>Elysian_VPC_Subnet_CrossStack</B> CFN template.
+
+###  [AWS CloudFormation Designer](https://console.aws.amazon.com/cloudformation/designer/home)
+| Region            | HVM AMIs                                                                 |
+| ----------------: | ------------------------------------------------------------------------ |
+| `us-east-1`       | [![ixo Elysian Stack launch][stack-badge]][us-east-1-hvm-stack-url]      |
+| `us-west-1`       | [![ixo Elysian Stack launch][stack-badge]][us-west-1-hvm-stack-url]      |
+| `us-west-2`       | [![ixo Elysian Stack launch][stack-badge]][us-west-2-hvm-stack-url]      |
+| `eu-west-1`       | [![ixo Elysian Stack launch][stack-badge]][eu-west-1-hvm-stack-url]      |
+| `eu-central-1`    | [![ixo Elysian Stack launch][stack-badge]][eu-central-1-hvm-stack-url]   |
+| `ap-northeast-1   | [![ixo Elysian Stack launch][stack-badge]][ap-southeast-1-hvm-stack-url] |
+| `ap-northeast-2`  | [![ixo Elysian Stack launch][stack-badge]][ap-southeast-2-hvm-stack-url] |
+| `ap-southeast-1`  | [![ixo Elysian Stack launch][stack-badge]][sa-east-1-hvm-stack-url]      |
+| `ap-southeast-2`  | [![ixo Elysian Stack launch][stack-badge]][ap-southeast-2-hvm-stack-url] |
+| `sa-east-1`       | [![ixo Elysian Stack launch][stack-badge]][sa-east-1-hvm-stack-url]      |
+| `cn-north-1`      | [![ixo Elysian Stack launch][stack-badge]][cn-north-1-hvm-stack-url]     |
+
+###  [AWS CLI](https://aws.amazon.com/cli)
+
 
 Subsequent to the basic networking <B>Resources</B> being created by the <B>Elysian_VPC_Subnet_CrossStack</B> CFN template
 the following <B>Outputs</B> are provided for cross-stack consumption:
@@ -68,20 +88,6 @@ $ aws cloudformation create-stack --stack-name Elysian-VPC-Subnet-Stack --templa
 
 #### [AWS CloudFormation Designer](https://console.aws.amazon.com/cloudformation/designer/home?region=us-east-1)
 
-
-| Region            | HVM AMIs                                                                 |
-| ----------------: | ------------------------------------------------------------------------ |
-| `us-east-1`       | [![ixo Elysian Stack launch][stack-badge]][us-east-1-hvm-stack-url]      |
-| `us-west-1`       | [![ixo Elysian Stack launch][stack-badge]][us-west-1-hvm-stack-url]      |
-| `us-west-2`       | [![ixo Elysian Stack launch][stack-badge]][us-west-2-hvm-stack-url]      |
-| `eu-west-1`       | [![ixo Elysian Stack launch][stack-badge]][eu-west-1-hvm-stack-url]      |
-| `eu-central-1`    | [![ixo Elysian Stack launch][stack-badge]][eu-central-1-hvm-stack-url]   |
-| `ap-northeast-1   | [![ixo Elysian Stack launch][stack-badge]][ap-southeast-1-hvm-stack-url] |
-| `ap-northeast-2`  | [![ixo Elysian Stack launch][stack-badge]][ap-southeast-2-hvm-stack-url] |
-| `ap-southeast-1`  | [![ixo Elysian Stack launch][stack-badge]][sa-east-1-hvm-stack-url]      |
-| `ap-southeast-2`  | [![ixo Elysian Stack launch][stack-badge]][ap-southeast-2-hvm-stack-url] |
-| `sa-east-1`       | [![ixo Elysian Stack launch][stack-badge]][sa-east-1-hvm-stack-url]      |
-| `cn-north-1`      | [![ixo Elysian Stack launch][stack-badge]][cn-north-1-hvm-stack-url]      |
 
 ### Parameters
 
