@@ -61,14 +61,14 @@ and can happen either by means of the
 
 | Region            | HVM AMIs                                                           | PV AMIs                                                          |
 | ----------------: | ------------------------------------------------------------------ | ---------------------------------------------------------------- |
-| `us-east-1`       | [![Kong Stack launch][stack-badge]][us-east-1-hvm-stack-url]       | [![Kong Stack launch][stack-badge]][us-east-1-pv-stack-url]      |
-| `us-west-1`       | [![Kong Stack launch][stack-badge]][us-west-1-hvm-stack-url]       | [![Kong Stack launch][stack-badge]][us-west-1-pv-stack-url]      |
-| `us-west-2`       | [![Kong Stack launch][stack-badge]][us-west-2-hvm-stack-url]       | [![Kong Stack launch][stack-badge]][us-west-2-pv-stack-url]      |
-| `eu-west-1`       | [![Kong Stack launch][stack-badge]][eu-west-1-hvm-stack-url]       | [![Kong Stack launch][stack-badge]][eu-west-1-pv-stack-url]      |
-| `ap-northeast-1`  | [![Kong Stack launch][stack-badge]][ap-northeast-1-hvm-stack-url]  | [![Kong Stack launch][stack-badge]][ap-northeast-1-pv-stack-url] |
-| `ap-southeast-1`  | [![Kong Stack launch][stack-badge]][ap-southeast-1-hvm-stack-url]  | [![Kong Stack launch][stack-badge]][ap-southeast-1-pv-stack-url] |
-| `ap-southeast-2`  | [![Kong Stack launch][stack-badge]][ap-southeast-2-hvm-stack-url]  | [![Kong Stack launch][stack-badge]][ap-southeast-2-pv-stack-url] |
-| `sa-east-1`       | [![Kong Stack launch][stack-badge]][sa-east-1-hvm-stack-url]       | [![Kong Stack launch][stack-badge]][sa-east-1-pv-stack-url]      |
+| `us-east-1`       | [![ixo Elysian Stack launch][stack-badge]][us-east-1-hvm-stack-url]       | [![ixo Elysian Stack launch][stack-badge]][us-east-1-pv-stack-url]      |
+| `us-west-1`       | [![ixo Elysian Stack launch][stack-badge]][us-west-1-hvm-stack-url]       | [![ixo Elysian Stack launch][stack-badge]][us-west-1-pv-stack-url]      |
+| `us-west-2`       | [![ixo Elysian Stack launch][stack-badge]][us-west-2-hvm-stack-url]       | [![ixo Elysian Stack launch][stack-badge]][us-west-2-pv-stack-url]      |
+| `eu-west-1`       | [![ixo Elysian Stack launch][stack-badge]][eu-west-1-hvm-stack-url]       | [![ixo Elysian Stack launch][stack-badge]][eu-west-1-pv-stack-url]      |
+| `ap-northeast-1`  | [![ixo Elysian Stack launch][stack-badge]][ap-northeast-1-hvm-stack-url]  | [![ixo Elysian Stack launch][stack-badge]][ap-northeast-1-pv-stack-url] |
+| `ap-southeast-1`  | [![ixo Elysian Stack launch][stack-badge]][ap-southeast-1-hvm-stack-url]  | [![ixo Elysian Stack launch][stack-badge]][ap-southeast-1-pv-stack-url] |
+| `ap-southeast-2`  | [![ixo Elysian Stack launch][stack-badge]][ap-southeast-2-hvm-stack-url]  | [![ixo Elysian Stack launch][stack-badge]][ap-southeast-2-pv-stack-url] |
+| `sa-east-1`       | [![ixo Elysian Stack launch][stack-badge]][sa-east-1-hvm-stack-url]       | [![ixo Elysian Stack launch][stack-badge]][sa-east-1-pv-stack-url]      |
 
 ###  2) Kong with Postgres DB
 
@@ -77,14 +77,14 @@ in a new VPC or existing VPC.
 
 | Region            | HVM AMIs                                                           | PV AMIs                                                          |
 | ----------------: | ------------------------------------------------------------------ | ---------------------------------------------------------------- |
-| `us-east-1`       | [![Kong Stack launch][stack-badge]][us-east-1-postgres-hvm-stack-url]       | [![Kong Stack launch][stack-badge]][us-east-1-postgres-pv-stack-url]      |
-| `us-west-1`       | [![Kong Stack launch][stack-badge]][us-west-1-postgres-hvm-stack-url]       | [![Kong Stack launch][stack-badge]][us-west-1-postgres-pv-stack-url]      |
-| `us-west-2`       | [![Kong Stack launch][stack-badge]][us-west-2-postgres-hvm-stack-url]       | [![Kong Stack launch][stack-badge]][us-west-2-postgres-pv-stack-url]      |
-| `eu-west-1`       | [![Kong Stack launch][stack-badge]][eu-west-1-postgres-hvm-stack-url]       | [![Kong Stack launch][stack-badge]][eu-west-1-postgres-pv-stack-url]      |
-| `ap-northeast-1`  | [![Kong Stack launch][stack-badge]][ap-northeast-1-postgres-hvm-stack-url]  | [![Kong Stack launch][stack-badge]][ap-northeast-1-postgres-pv-stack-url] |
-| `ap-southeast-1`  | [![Kong Stack launch][stack-badge]][ap-southeast-1-postgres-hvm-stack-url]  | [![Kong Stack launch][stack-badge]][ap-southeast-1-postgres-pv-stack-url] |
-| `ap-southeast-2`  | [![Kong Stack launch][stack-badge]][ap-southeast-2-postgres-hvm-stack-url]  | [![Kong Stack launch][stack-badge]][ap-southeast-2-postgres-pv-stack-url] |
-| `sa-east-1`       | [![Kong Stack launch][stack-badge]][sa-east-1-postgres-hvm-stack-url]       | [![Kong Stack launch][stack-badge]][sa-east-1-postgres-pv-stack-url]      |
+| `us-east-1`       | [![ixo Elysian Stack launch][stack-badge]][us-east-1-postgres-hvm-stack-url]       | [![ixo Elysian Stack launch][stack-badge]][us-east-1-postgres-pv-stack-url]      |
+| `us-west-1`       | [![ixo Elysian Stack launch][stack-badge]][us-west-1-postgres-hvm-stack-url]       | [![ixo Elysian Stack launch][stack-badge]][us-west-1-postgres-pv-stack-url]      |
+| `us-west-2`       | [![ixo Elysian Stack launch][stack-badge]][us-west-2-postgres-hvm-stack-url]       | [![ixo Elysian Stack launch][stack-badge]][us-west-2-postgres-pv-stack-url]      |
+| `eu-west-1`       | [![ixo Elysian Stack launch][stack-badge]][eu-west-1-postgres-hvm-stack-url]       | [![ixo Elysian Stack launch][stack-badge]][eu-west-1-postgres-pv-stack-url]      |
+| `ap-northeast-1`  | [![ixo Elysian Stack launch][stack-badge]][ap-northeast-1-postgres-hvm-stack-url]  | [![ixo Elysian Stack launch][stack-badge]][ap-northeast-1-postgres-pv-stack-url] |
+| `ap-southeast-1`  | [![ixo Elysian Stack launch][stack-badge]][ap-southeast-1-postgres-hvm-stack-url]  | [![ixo Elysian Stack launch][stack-badge]][ap-southeast-1-postgres-pv-stack-url] |
+| `ap-southeast-2`  | [![ixo Elysian Stack launch][stack-badge]][ap-southeast-2-postgres-hvm-stack-url]  | [![ixo Elysian Stack launch][stack-badge]][ap-southeast-2-postgres-pv-stack-url] |
+| `sa-east-1`       | [![ixo Elysian Stack launch][stack-badge]][sa-east-1-postgres-hvm-stack-url]       | [![ixo Elysian Stack launch][stack-badge]][sa-east-1-postgres-pv-stack-url]      |
 
 
 ### Parameters
