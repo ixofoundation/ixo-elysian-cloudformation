@@ -27,7 +27,7 @@ outputs as done from the <B>Elysian_VPC_Subnet_CrossStack</B> CFN template.
 | `us-west-2`       | [![ixo Elysian Stack launch][stack-badge]][us-west-2-hvm-stack-url]      |
 | `eu-west-1`       | [![ixo Elysian Stack launch][stack-badge]][eu-west-1-hvm-stack-url]      |
 | `eu-central-1`    | [![ixo Elysian Stack launch][stack-badge]][eu-central-1-hvm-stack-url]   |
-| `ap-northeast-1   | [![ixo Elysian Stack launch][stack-badge]][ap-southeast-1-hvm-stack-url] |
+| `ap-northeast-1`  | [![ixo Elysian Stack launch][stack-badge]][ap-southeast-1-hvm-stack-url] |
 | `ap-northeast-2`  | [![ixo Elysian Stack launch][stack-badge]][ap-southeast-2-hvm-stack-url] |
 | `ap-southeast-1`  | [![ixo Elysian Stack launch][stack-badge]][sa-east-1-hvm-stack-url]      |
 | `ap-southeast-2`  | [![ixo Elysian Stack launch][stack-badge]][ap-southeast-2-hvm-stack-url] |
