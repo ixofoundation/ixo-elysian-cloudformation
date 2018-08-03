@@ -143,79 +143,75 @@ Resources:
         - Key: Stack
           Value: !Ref 'AWS::StackId'
     Metadata:
+      Comment: Install a simple application
       'AWS::CloudFormation::Init':
         config:
           packages:
             yum:
               httpd: []
-              php: []
-          groups:
-            apache: {}
-          users:
-            apache:
-              groups:
-                - apache
-          sources:
-            /home/ec2-user/aws-cli: 'https://github.com/aws/aws-cli/tarball/master'
           files:
-            /tmp/cwlogs/apacheaccess.conf:
-              content: !Sub |
-                [general]
-                state_file= /var/awslogs/agent-state
-                [/var/log/httpd/access_log]
-                file = /var/log/httpd/access_log
-                log_group_name = ${AWS::StackName}
-                log_stream_name = {instance_id}/apache.log
-                datetime_format = %d/%b/%Y:%H:%M:%S
-              mode: '000400'
-              owner: apache
-              group: apache
-            /var/www/html/index.php:
-              content: !Sub >
-                <?php
+            /var/www/html/index.html:
+              content: !Join
+                - |+
 
-                echo '<h1>AWS CloudFormation sample PHP application for
-                ${AWS::StackName}</h1>';
-
-                ?>
+                - - <img src="
+                  - 'https://s3.amazonaws.com/cloudformation-examples-us-east-1'
+                  - /cloudformation_graphic.png" alt="AWS CloudFormation Logo"/>
+                  - >-
+                    <h1>Congratulations, you have successfully launched the AWS
+                    CloudFormation sample.</h1>
               mode: '000644'
-              owner: apache
-              group: apache
+              owner: root
+              group: root
             /etc/cfn/cfn-hup.conf:
-              content: !Sub |
-                [main]
-                stack=${AWS::StackId}
-                region=${AWS::Region}
+              content: !Join
+                - ''
+                - - |
+                    [main]
+                  - stack=
+                  - !Ref 'AWS::StackId'
+                  - |+
+
+                  - region=
+                  - !Ref 'AWS::Region'
+                  - |+
+
               mode: '000400'
               owner: root
               group: root
             /etc/cfn/hooks.d/cfn-auto-reloader.conf:
-              content: !Sub >
-                [cfn-auto-reloader-hook]
+              content: !Join
+                - ''
+                - - |
+                    [cfn-auto-reloader-hook]
+                  - |
+                    triggers=post.update
+                  - >
+                    path=Resources.WebServerInstance.Metadata.AWS::CloudFormation::Init
+                  - 'action=/opt/aws/bin/cfn-init -v '
+                  - '         --stack '
+                  - !Ref 'AWS::StackName'
+                  - '         --resource WebServerInstance '
+                  - '         --region '
+                  - !Ref 'AWS::Region'
+                  - |+
 
-                triggers=post.update
-
-                path=Resources.WebServerHost.Metadata.AWS::CloudFormation::Init
-
-                action=/opt/aws/bin/cfn-init -v --stack ${AWS::StackName}
-                --resource WebServerHost --region ${AWS::Region}
+                  - |
+                    runas=root
               mode: '000400'
               owner: root
               group: root
-          commands:
-            test:
-              command: echo "$MAGIC" > test.txt
-              env:
-                MAGIC: I come from the environment!
-              cwd: '~'
           services:
             sysvinit:
               httpd:
                 enabled: 'true'
                 ensureRunning: 'true'
-              sendmail:
-                enabled: 'false'
-                ensureRunning: 'false'
+              cfn-hup:
+                enabled: 'true'
+                ensureRunning: 'true'
+                files:
+                  - /etc/cfn/cfn-hup.conf
+                  - /etc/cfn/hooks.d/cfn-auto-reloader.conf
       'AWS::CloudFormation::Designer':
         id: 14d901e9-f4ff-4d3d-8b03-34112dbe4e2b
   HTTPProxySecurityGroup:
@@ -288,33 +284,6 @@ Metadata:
       embeds: []
       iscontainedinside:
         - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
     7eef9d3e-c9c9-4443-90b3-861c4b7b375c:
       source:
         id: e707e103-85ca-46c3-81aa-cc023be37c61
@@ -332,33 +301,6 @@ Metadata:
       parent: e707e103-85ca-46c3-81aa-cc023be37c61
       embeds: []
       iscontainedinside:
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
         - e707e103-85ca-46c3-81aa-cc023be37c61
     8c6bce39-f60c-4287-a88f-e79ea372248f:
       size:
@@ -392,33 +334,6 @@ Metadata:
       parent: e707e103-85ca-46c3-81aa-cc023be37c61
       embeds: []
       iscontainedinside:
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
         - e707e103-85ca-46c3-81aa-cc023be37c61
     45c91818-56f2-495f-b955-4ff3e6187be8:
       source:
@@ -496,11 +411,6 @@ Metadata:
       parent: e707e103-85ca-46c3-81aa-cc023be37c61
       embeds: []
       iscontainedinside:
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
         - e707e103-85ca-46c3-81aa-cc023be37c61
     9940c4bf-b6dd-4069-b96b-c44ac68fd1e2:
       source:
