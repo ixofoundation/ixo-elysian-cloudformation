@@ -71,11 +71,38 @@ Resources:
     Metadata:
       'AWS::CloudFormation::Designer':
         id: 1b425fef-d56e-4514-b198-1ce5e6411ebc
-  InstanceSecurityGroup:
+  PublicSubnetNetworkAclAssociation:
+    Type: 'AWS::EC2::SubnetNetworkAclAssociation'
+    Properties:
+      NetworkAclId: !Ref PublicNetworkAcl
+      SubnetId: !Ref PublicSubnet
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 45c91818-56f2-495f-b955-4ff3e6187be8
+  PublicNetworkAcl:
+    Type: 'AWS::EC2::NetworkAcl'
+    Properties:
+      VpcId: !Ref VPC
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 5a55fc3b-ecb4-4de1-bdcb-b65861904227
+  LoadBalancer:
+    Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
+    Properties:
+      SubnetMappings:
+        - SubnetId: !Ref PublicSubnet
+      SecurityGroups:
+        - !Ref LoadBalancerSecurityGroup
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 14d901e9-f4ff-4d3d-8b03-34112dbe4e2b
+  LoadBalancerSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
       VpcId: !Ref VPC
-      GroupDescription: Enable HTTP access via port 80, HTTPS access via 443 & SSH access via port 22
+      GroupDescription: >-
+        Enable HTTP access via port 80, HTTPS access via 443 & SSH access via
+        port 22
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: '22'
@@ -92,21 +119,6 @@ Resources:
     Metadata:
       'AWS::CloudFormation::Designer':
         id: 8281ebd8-29ce-4471-9fbc-2709f5115775
-  PublicSubnetNetworkAclAssociation:
-    Type: 'AWS::EC2::SubnetNetworkAclAssociation'
-    Properties:
-      NetworkAclId: !Ref PublicNetworkAcl
-      SubnetId: !Ref PublicSubnet
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: 45c91818-56f2-495f-b955-4ff3e6187be8
-  PublicNetworkAcl:
-    Type: 'AWS::EC2::NetworkAcl'
-    Properties:
-      VpcId: !Ref VPC
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: 5a55fc3b-ecb4-4de1-bdcb-b65861904227
 Outputs:
   VPCId:
     Description: VPC ID
@@ -120,14 +132,14 @@ Outputs:
       Name: !Sub '${AWS::StackName}-SubnetId'
   InstanceSecurityGroup:
     Description: The security group ID to use for public servers
-    Value: !GetAtt
+    Value: !GetAtt 
       - InstanceSecurityGroup
       - GroupId
     Export:
       Name: !Sub '${AWS::StackName}-SecurityGroupId'
   AvailabilityZone:
     Description: The availability zone to use for volumes
-    Value: !GetAtt
+    Value: !GetAtt 
       - PublicSubnet
       - AvailabilityZone
     Export:
@@ -140,33 +152,40 @@ Metadata:
         height: 60
       position:
         x: 170
-        'y': -30
+        'y': 120
       z: 0
       embeds: []
     e707e103-85ca-46c3-81aa-cc023be37c61:
       size:
-        width: 460
-        height: 300
+        width: 450
+        height: 510
       position:
         x: 290
         'y': -250
       z: 0
       embeds:
-        - 5a55fc3b-ecb4-4de1-bdcb-b65861904227
         - 8281ebd8-29ce-4471-9fbc-2709f5115775
+        - 5a55fc3b-ecb4-4de1-bdcb-b65861904227
         - 6f69025b-5908-4c8a-98db-d9fa1985aab2
         - 16a9b5b9-a9eb-484d-b5b1-f2fec3ed1f83
+        - 14d901e9-f4ff-4d3d-8b03-34112dbe4e2b
     16a9b5b9-a9eb-484d-b5b1-f2fec3ed1f83:
       size:
         width: 180
         height: 110
       position:
-        x: 550
-        'y': -210
+        x: 540
+        'y': -80
       z: 1
       parent: e707e103-85ca-46c3-81aa-cc023be37c61
       embeds: []
       iscontainedinside:
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
         - e707e103-85ca-46c3-81aa-cc023be37c61
     7eef9d3e-c9c9-4443-90b3-861c4b7b375c:
       source:
@@ -185,6 +204,12 @@ Metadata:
       parent: e707e103-85ca-46c3-81aa-cc023be37c61
       embeds: []
       iscontainedinside:
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
         - e707e103-85ca-46c3-81aa-cc023be37c61
     8c6bce39-f60c-4287-a88f-e79ea372248f:
       size:
@@ -212,24 +237,36 @@ Metadata:
         width: 60
         height: 60
       position:
-        x: 410
+        x: 400
         'y': -60
       z: 1
       parent: e707e103-85ca-46c3-81aa-cc023be37c61
       embeds: []
       iscontainedinside:
         - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
     5a55fc3b-ecb4-4de1-bdcb-b65861904227:
       size:
         width: 130
         height: 80
       position:
-        x: 600
-        'y': -40
+        x: 560
+        'y': -210
       z: 1
       parent: e707e103-85ca-46c3-81aa-cc023be37c61
       embeds: []
       iscontainedinside:
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
         - e707e103-85ca-46c3-81aa-cc023be37c61
     45c91818-56f2-495f-b955-4ff3e6187be8:
       source:
@@ -237,3 +274,29 @@ Metadata:
       target:
         id: 16a9b5b9-a9eb-484d-b5b1-f2fec3ed1f83
       z: 1
+    14d901e9-f4ff-4d3d-8b03-34112dbe4e2b:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: 320
+        'y': 10
+      z: 1
+      parent: e707e103-85ca-46c3-81aa-cc023be37c61
+      embeds: []
+      isassociatedwith:
+        - 8281ebd8-29ce-4471-9fbc-2709f5115775
+      iscontainedinside:
+        - 16a9b5b9-a9eb-484d-b5b1-f2fec3ed1f83
+    f06ba170-87b8-4f11-a454-2f2ba7161d1c:
+      source:
+        id: 14d901e9-f4ff-4d3d-8b03-34112dbe4e2b
+      target:
+        id: 16a9b5b9-a9eb-484d-b5b1-f2fec3ed1f83
+      z: 11
+    906244cb-7385-4307-8a8d-94042bee8054:
+      source:
+        id: 14d901e9-f4ff-4d3d-8b03-34112dbe4e2b
+      target:
+        id: 8281ebd8-29ce-4471-9fbc-2709f5115775
+      z: 11
