@@ -86,25 +86,139 @@ Resources:
     Metadata:
       'AWS::CloudFormation::Designer':
         id: 5a55fc3b-ecb4-4de1-bdcb-b65861904227
-  LoadBalancer:
-    Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
+  EIPAddress:
+    Type: 'AWS::EC2::EIP'
     Properties:
-      Type: application
-      Scheme: internet-facing
-      SubnetMappings:
-        - AllocationId: !GetAtt
-            - EIP
-            - AllocationId
-          SubnetId: !Ref PublicSubnet
-      SecurityGroups:
-        - !Ref LoadBalancerSecurityGroup
-      Tags:
-        - Key: Application
-          Value: !Ref 'AWS::StackId'
+      Domain: vpc
+      InstanceId: !Ref HTTPProxy
+    DependsOn:
+      - VPCGatewayAttachment
     Metadata:
       'AWS::CloudFormation::Designer':
+        id: 9f177d7e-97f7-4e62-8ea3-bd501d29e032
+  EIPAssociation:
+    Type: 'AWS::EC2::EIPAssociation'
+    Properties:
+      InstanceId: !Ref HTTPProxy
+      EIP: !Ref EIPAddress
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: c2886a86-4319-407b-9e61-c3148adf702f
+  HTTPProxy:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      InstanceType: t2.micro
+      ImageId: ami-a4c7edb2
+      KeyName: ixoworld.xyz
+      UserData:
+        'Fn::Base64': !Sub >
+          #!/bin/bash -xe
+
+          # Get the latest CloudFormation package
+
+          yum update -y aws-cfn-bootstrap
+
+          # Start cfn-init
+
+          /opt/aws/bin/cfn-init -s ${AWS::StackId} -r HTTPProxy --region
+          ${AWS::Region} || error_exit 'Failed to run cfn-init'
+
+          # Start up the cfn-hup daemon to listen for changes to the EC2
+          instance metadata
+
+          /opt/aws/bin/cfn-hup || error_exit 'Failed to start cfn-hup'
+
+          # All done so signal success
+
+          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackId} --resource
+          WebServerHost --region ${AWS::Region}
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: 'true'
+          DeviceIndex: '0'
+          GroupSet:
+            - !Ref HTTPProxySecurityGroup
+          SubnetId: !Ref PublicSubnet
+          DeleteOnTermination: true
+      Tags:
+        - Key: Stack
+          Value: !Ref 'AWS::StackId'
+    Metadata:
+      'AWS::CloudFormation::Init':
+        config:
+          packages:
+            yum:
+              httpd: []
+              php: []
+          groups:
+            apache: {}
+          users:
+            apache:
+              groups:
+                - apache
+          sources:
+            /home/ec2-user/aws-cli: 'https://github.com/aws/aws-cli/tarball/master'
+          files:
+            /tmp/cwlogs/apacheaccess.conf:
+              content: !Sub |
+                [general]
+                state_file= /var/awslogs/agent-state
+                [/var/log/httpd/access_log]
+                file = /var/log/httpd/access_log
+                log_group_name = ${AWS::StackName}
+                log_stream_name = {instance_id}/apache.log
+                datetime_format = %d/%b/%Y:%H:%M:%S
+              mode: '000400'
+              owner: apache
+              group: apache
+            /var/www/html/index.php:
+              content: !Sub >
+                <?php
+
+                echo '<h1>AWS CloudFormation sample PHP application for
+                ${AWS::StackName}</h1>';
+
+                ?>
+              mode: '000644'
+              owner: apache
+              group: apache
+            /etc/cfn/cfn-hup.conf:
+              content: !Sub |
+                [main]
+                stack=${AWS::StackId}
+                region=${AWS::Region}
+              mode: '000400'
+              owner: root
+              group: root
+            /etc/cfn/hooks.d/cfn-auto-reloader.conf:
+              content: !Sub >
+                [cfn-auto-reloader-hook]
+
+                triggers=post.update
+
+                path=Resources.WebServerHost.Metadata.AWS::CloudFormation::Init
+
+                action=/opt/aws/bin/cfn-init -v --stack ${AWS::StackName}
+                --resource WebServerHost --region ${AWS::Region}
+              mode: '000400'
+              owner: root
+              group: root
+          commands:
+            test:
+              command: echo "$MAGIC" > test.txt
+              env:
+                MAGIC: I come from the environment!
+              cwd: '~'
+          services:
+            sysvinit:
+              httpd:
+                enabled: 'true'
+                ensureRunning: 'true'
+              sendmail:
+                enabled: 'false'
+                ensureRunning: 'false'
+      'AWS::CloudFormation::Designer':
         id: 14d901e9-f4ff-4d3d-8b03-34112dbe4e2b
-  LoadBalancerSecurityGroup:
+  HTTPProxySecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
       VpcId: !Ref VPC
@@ -113,28 +227,16 @@ Resources:
         port 22
       SecurityGroupIngress:
         - IpProtocol: tcp
-          FromPort: '22'
-          ToPort: '22'
-          CidrIp: 0.0.0.0/0
-        - IpProtocol: tcp
           FromPort: '80'
           ToPort: '80'
           CidrIp: 0.0.0.0/0
         - IpProtocol: tcp
-          FromPort: '443'
-          ToPort: '443'
+          FromPort: '22'
+          ToPort: '22'
           CidrIp: 0.0.0.0/0
     Metadata:
       'AWS::CloudFormation::Designer':
-        id: 8281ebd8-29ce-4471-9fbc-2709f5115775
-  EIP:
-    Type: 'AWS::EC2::EIP'
-    Properties:
-      Domain: vpc
-    DependsOn: VPCGatewayAttachment
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: 9f177d7e-97f7-4e62-8ea3-bd501d29e032
+        id: 8f21ce7c-1cb2-45f5-aae2-2e8489a09814
 Outputs:
   VPCId:
     Description: VPC ID
@@ -146,20 +248,9 @@ Outputs:
     Value: !Ref PublicSubnet
     Export:
       Name: !Sub '${AWS::StackName}-SubnetId'
-  LoadBalancerSecurityGroup:
-    Description: The security group ID to use for public servers
-    Value: !GetAtt
-      - LoadBalancerSecurityGroup
-      - GroupId
-    Export:
-      Name: !Sub '${AWS::StackName}-SecurityGroupId'
-  AvailabilityZone:
-    Description: The availability zone to use for volumes
-    Value: !GetAtt
-      - PublicSubnet
-      - AvailabilityZone
-    Export:
-      Name: !Sub '${AWS::StackName}-AvailabilityZone'
+  PublicIP:
+    Description: Public IP of HTTP Proxy server
+    Value: !GetAtt HTTPProxy.PublicIp
 Metadata:
   'AWS::CloudFormation::Designer':
     7281c844-5411-4d45-a21b-da763f1e0b28:
@@ -167,9 +258,9 @@ Metadata:
         width: 60
         height: 60
       position:
-        x: 170
-        'y': 70
-      z: 0
+        x: 180
+        'y': 60
+      z: 1
       embeds: []
     e707e103-85ca-46c3-81aa-cc023be37c61:
       size:
@@ -177,25 +268,41 @@ Metadata:
         height: 510
       position:
         x: 290
-        'y': -250
-      z: 0
+        'y': 310
+      z: 1
       embeds:
-        - 8281ebd8-29ce-4471-9fbc-2709f5115775
+        - 14d901e9-f4ff-4d3d-8b03-34112dbe4e2b
+        - 8f21ce7c-1cb2-45f5-aae2-2e8489a09814
         - 5a55fc3b-ecb4-4de1-bdcb-b65861904227
         - 6f69025b-5908-4c8a-98db-d9fa1985aab2
         - 16a9b5b9-a9eb-484d-b5b1-f2fec3ed1f83
-        - 14d901e9-f4ff-4d3d-8b03-34112dbe4e2b
     16a9b5b9-a9eb-484d-b5b1-f2fec3ed1f83:
       size:
         width: 180
-        height: 110
+        height: 120
       position:
-        x: 540
-        'y': -80
-      z: 1
+        x: 530
+        'y': 460
+      z: 2
       parent: e707e103-85ca-46c3-81aa-cc023be37c61
       embeds: []
       iscontainedinside:
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
         - e707e103-85ca-46c3-81aa-cc023be37c61
         - e707e103-85ca-46c3-81aa-cc023be37c61
         - e707e103-85ca-46c3-81aa-cc023be37c61
@@ -213,18 +320,34 @@ Metadata:
         id: e707e103-85ca-46c3-81aa-cc023be37c61
       target:
         id: 7281c844-5411-4d45-a21b-da763f1e0b28
-      z: 0
+      z: 1
     6f69025b-5908-4c8a-98db-d9fa1985aab2:
       size:
-        width: 190
-        height: 110
+        width: 180
+        height: 120
       position:
         x: 320
-        'y': -210
-      z: 1
+        'y': 340
+      z: 2
       parent: e707e103-85ca-46c3-81aa-cc023be37c61
       embeds: []
       iscontainedinside:
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
         - e707e103-85ca-46c3-81aa-cc023be37c61
         - e707e103-85ca-46c3-81aa-cc023be37c61
         - e707e103-85ca-46c3-81aa-cc023be37c61
@@ -242,9 +365,9 @@ Metadata:
         width: 60
         height: 60
       position:
-        x: 170
-        'y': -220
-      z: 0
+        x: 180
+        'y': 210
+      z: 1
       embeds: []
       isassociatedwith:
         - 7281c844-5411-4d45-a21b-da763f1e0b28
@@ -257,41 +380,34 @@ Metadata:
         id: 6f69025b-5908-4c8a-98db-d9fa1985aab2
       target:
         id: 16a9b5b9-a9eb-484d-b5b1-f2fec3ed1f83
-      z: 1
-    8281ebd8-29ce-4471-9fbc-2709f5115775:
-      size:
-        width: 60
-        height: 60
-      position:
-        x: 400
-        'y': -60
-      z: 1
-      parent: e707e103-85ca-46c3-81aa-cc023be37c61
-      embeds: []
-      iscontainedinside:
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
-        - e707e103-85ca-46c3-81aa-cc023be37c61
+      z: 2
     5a55fc3b-ecb4-4de1-bdcb-b65861904227:
       size:
-        width: 130
-        height: 80
+        width: 120
+        height: 90
       position:
         x: 560
-        'y': -210
-      z: 1
+        'y': 340
+      z: 2
       parent: e707e103-85ca-46c3-81aa-cc023be37c61
       embeds: []
       iscontainedinside:
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
         - e707e103-85ca-46c3-81aa-cc023be37c61
         - e707e103-85ca-46c3-81aa-cc023be37c61
         - e707e103-85ca-46c3-81aa-cc023be37c61
@@ -309,20 +425,21 @@ Metadata:
         id: 5a55fc3b-ecb4-4de1-bdcb-b65861904227
       target:
         id: 16a9b5b9-a9eb-484d-b5b1-f2fec3ed1f83
-      z: 1
+      z: 2
     14d901e9-f4ff-4d3d-8b03-34112dbe4e2b:
       size:
         width: 60
         height: 60
       position:
         x: 320
-        'y': -10
-      z: 1
+        'y': 550
+      z: 2
       parent: e707e103-85ca-46c3-81aa-cc023be37c61
       embeds: []
       isassociatedwith:
         - 8281ebd8-29ce-4471-9fbc-2709f5115775
         - 9f177d7e-97f7-4e62-8ea3-bd501d29e032
+        - 8f21ce7c-1cb2-45f5-aae2-2e8489a09814
       iscontainedinside:
         - 16a9b5b9-a9eb-484d-b5b1-f2fec3ed1f83
     9f177d7e-97f7-4e62-8ea3-bd501d29e032:
@@ -330,9 +447,64 @@ Metadata:
         width: 60
         height: 60
       position:
-        x: 60
-        'y': 0
-      z: 0
+        x: 70
+        'y': 280
+      z: 1
       embeds: []
+      isassociatedwith:
+        - 14d901e9-f4ff-4d3d-8b03-34112dbe4e2b
       dependson:
         - 7eef9d3e-c9c9-4443-90b3-861c4b7b375c
+    c2886a86-4319-407b-9e61-c3148adf702f:
+      source:
+        id: 9f177d7e-97f7-4e62-8ea3-bd501d29e032
+      target:
+        id: 14d901e9-f4ff-4d3d-8b03-34112dbe4e2b
+      z: 2
+    3cf966bb-9505-474d-be22-e19f1c748180:
+      source:
+        id: 14d901e9-f4ff-4d3d-8b03-34112dbe4e2b
+        selector: 'g:nth-child(1) g:nth-child(4) g:nth-child(10) circle:nth-child(1)     '
+        port: 'AWS::ContainedInsideLink-AWS::EC2::Subnet-SubnetId'
+      target:
+        id: 16a9b5b9-a9eb-484d-b5b1-f2fec3ed1f83
+      z: 4
+    05e1bd81-2bab-4652-a804-3257ba19d2f3:
+      source:
+        id: 14d901e9-f4ff-4d3d-8b03-34112dbe4e2b
+        selector: 'g:nth-child(1) g:nth-child(4) g:nth-child(7) circle:nth-child(1)     '
+        port: 'AWS::RefLink-AWS::EC2::SecurityGroup-SecurityGroupIds'
+      target:
+        id: 8281ebd8-29ce-4471-9fbc-2709f5115775
+      z: 4
+    a7c742e8-d0e4-4e7d-96d0-ffa0de5422a8:
+      source:
+        id: 14d901e9-f4ff-4d3d-8b03-34112dbe4e2b
+        selector: 'g:nth-child(1) g:nth-child(4) g:nth-child(7) circle:nth-child(1)     '
+        port: 'AWS::RefLink-AWS::EC2::SecurityGroup-SecurityGroupIds'
+      target:
+        id: 8281ebd8-29ce-4471-9fbc-2709f5115775
+      z: 4
+    8f21ce7c-1cb2-45f5-aae2-2e8489a09814:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: 410
+        'y': 500
+      z: 2
+      parent: e707e103-85ca-46c3-81aa-cc023be37c61
+      embeds: []
+      iscontainedinside:
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+    9940c4bf-b6dd-4069-b96b-c44ac68fd1e2:
+      source:
+        id: 14d901e9-f4ff-4d3d-8b03-34112dbe4e2b
+      target:
+        id: 8f21ce7c-1cb2-45f5-aae2-2e8489a09814
+      z: 3
