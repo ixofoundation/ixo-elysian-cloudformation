@@ -89,10 +89,18 @@ Resources:
   LoadBalancer:
     Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
     Properties:
+      Type: application
+      Scheme: internet-facing
       SubnetMappings:
-        - SubnetId: !Ref PublicSubnet
+        - AllocationId: !GetAtt
+            - EIP
+            - AllocationId
+          SubnetId: !Ref PublicSubnet
       SecurityGroups:
         - !Ref LoadBalancerSecurityGroup
+      Tags:
+        - Key: Application
+          Value: !Ref 'AWS::StackId'
     Metadata:
       'AWS::CloudFormation::Designer':
         id: 14d901e9-f4ff-4d3d-8b03-34112dbe4e2b
@@ -119,6 +127,14 @@ Resources:
     Metadata:
       'AWS::CloudFormation::Designer':
         id: 8281ebd8-29ce-4471-9fbc-2709f5115775
+  EIP:
+    Type: 'AWS::EC2::EIP'
+    Properties:
+      Domain: vpc
+    DependsOn: VPCGatewayAttachment
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 9f177d7e-97f7-4e62-8ea3-bd501d29e032
 Outputs:
   VPCId:
     Description: VPC ID
@@ -130,16 +146,16 @@ Outputs:
     Value: !Ref PublicSubnet
     Export:
       Name: !Sub '${AWS::StackName}-SubnetId'
-  InstanceSecurityGroup:
+  LoadBalancerSecurityGroup:
     Description: The security group ID to use for public servers
-    Value: !GetAtt 
-      - InstanceSecurityGroup
+    Value: !GetAtt
+      - LoadBalancerSecurityGroup
       - GroupId
     Export:
       Name: !Sub '${AWS::StackName}-SecurityGroupId'
   AvailabilityZone:
     Description: The availability zone to use for volumes
-    Value: !GetAtt 
+    Value: !GetAtt
       - PublicSubnet
       - AvailabilityZone
     Export:
@@ -152,7 +168,7 @@ Metadata:
         height: 60
       position:
         x: 170
-        'y': 120
+        'y': 70
       z: 0
       embeds: []
     e707e103-85ca-46c3-81aa-cc023be37c61:
@@ -187,6 +203,11 @@ Metadata:
         - e707e103-85ca-46c3-81aa-cc023be37c61
         - e707e103-85ca-46c3-81aa-cc023be37c61
         - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
     7eef9d3e-c9c9-4443-90b3-861c4b7b375c:
       source:
         id: e707e103-85ca-46c3-81aa-cc023be37c61
@@ -204,6 +225,11 @@ Metadata:
       parent: e707e103-85ca-46c3-81aa-cc023be37c61
       embeds: []
       iscontainedinside:
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
         - e707e103-85ca-46c3-81aa-cc023be37c61
         - e707e103-85ca-46c3-81aa-cc023be37c61
         - e707e103-85ca-46c3-81aa-cc023be37c61
@@ -250,6 +276,11 @@ Metadata:
         - e707e103-85ca-46c3-81aa-cc023be37c61
         - e707e103-85ca-46c3-81aa-cc023be37c61
         - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
     5a55fc3b-ecb4-4de1-bdcb-b65861904227:
       size:
         width: 130
@@ -261,6 +292,11 @@ Metadata:
       parent: e707e103-85ca-46c3-81aa-cc023be37c61
       embeds: []
       iscontainedinside:
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
         - e707e103-85ca-46c3-81aa-cc023be37c61
         - e707e103-85ca-46c3-81aa-cc023be37c61
         - e707e103-85ca-46c3-81aa-cc023be37c61
@@ -280,23 +316,23 @@ Metadata:
         height: 60
       position:
         x: 320
-        'y': 10
+        'y': -10
       z: 1
       parent: e707e103-85ca-46c3-81aa-cc023be37c61
       embeds: []
       isassociatedwith:
         - 8281ebd8-29ce-4471-9fbc-2709f5115775
+        - 9f177d7e-97f7-4e62-8ea3-bd501d29e032
       iscontainedinside:
         - 16a9b5b9-a9eb-484d-b5b1-f2fec3ed1f83
-    f06ba170-87b8-4f11-a454-2f2ba7161d1c:
-      source:
-        id: 14d901e9-f4ff-4d3d-8b03-34112dbe4e2b
-      target:
-        id: 16a9b5b9-a9eb-484d-b5b1-f2fec3ed1f83
-      z: 11
-    906244cb-7385-4307-8a8d-94042bee8054:
-      source:
-        id: 14d901e9-f4ff-4d3d-8b03-34112dbe4e2b
-      target:
-        id: 8281ebd8-29ce-4471-9fbc-2709f5115775
-      z: 11
+    9f177d7e-97f7-4e62-8ea3-bd501d29e032:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: 60
+        'y': 0
+      z: 0
+      embeds: []
+      dependson:
+        - 7eef9d3e-c9c9-4443-90b3-861c4b7b375c
