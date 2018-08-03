@@ -15,7 +15,7 @@ Resources:
     Metadata:
       'AWS::CloudFormation::Designer':
         id: e707e103-85ca-46c3-81aa-cc023be37c61
-  PublicSubnet:
+  PublicSubnetA:
     Type: 'AWS::EC2::Subnet'
     Properties:
       VpcId: !Ref VPC
@@ -63,22 +63,6 @@ Resources:
     Metadata:
       'AWS::CloudFormation::Designer':
         id: 8c6bce39-f60c-4287-a88f-e79ea372248f
-  PublicSubnetRouteTableAssociation:
-    Type: 'AWS::EC2::SubnetRouteTableAssociation'
-    Properties:
-      SubnetId: !Ref PublicSubnet
-      RouteTableId: !Ref PublicRouteTable
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: 1b425fef-d56e-4514-b198-1ce5e6411ebc
-  PublicSubnetNetworkAclAssociation:
-    Type: 'AWS::EC2::SubnetNetworkAclAssociation'
-    Properties:
-      NetworkAclId: !Ref PublicNetworkAcl
-      SubnetId: !Ref PublicSubnet
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: 45c91818-56f2-495f-b955-4ff3e6187be8
   PublicNetworkAcl:
     Type: 'AWS::EC2::NetworkAcl'
     Properties:
@@ -91,11 +75,8 @@ Resources:
     Properties:
       Type: application
       Scheme: internet-facing
-      SubnetMappings:
-        - AllocationId: !GetAtt
-            - EIP
-            - AllocationId
-          SubnetId: !Ref PublicSubnet
+      Subnets:
+        - !Ref PublicSubnetA
       SecurityGroups:
         - !Ref LoadBalancerSecurityGroup
       Tags:
@@ -127,36 +108,44 @@ Resources:
     Metadata:
       'AWS::CloudFormation::Designer':
         id: 8281ebd8-29ce-4471-9fbc-2709f5115775
-  EIP:
-    Type: 'AWS::EC2::EIP'
+  PublicSubnetARouteTableAssociation:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
     Properties:
-      Domain: vpc
-    DependsOn: VPCGatewayAttachment
+      SubnetId: !Ref PublicSubnetA
+      RouteTableId: !Ref PublicRouteTable
     Metadata:
       'AWS::CloudFormation::Designer':
-        id: 9f177d7e-97f7-4e62-8ea3-bd501d29e032
+        id: 1b425fef-d56e-4514-b198-1ce5e6411ebc
+  PublicSubnetANetworkAclAssociation:
+    Type: 'AWS::EC2::SubnetNetworkAclAssociation'
+    Properties:
+      NetworkAclId: !Ref PublicNetworkAcl
+      SubnetId: !Ref PublicSubnetA
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 45c91818-56f2-495f-b955-4ff3e6187be8
 Outputs:
   VPCId:
     Description: VPC ID
     Value: !Ref VPC
     Export:
       Name: !Sub '${AWS::StackName}-VPCId'
-  PublicSubnet:
+  PublicSubnetA:
     Description: The subnet ID to use for public web servers
-    Value: !Ref PublicSubnet
+    Value: !Ref PublicSubnetA
     Export:
       Name: !Sub '${AWS::StackName}-SubnetId'
   LoadBalancerSecurityGroup:
     Description: The security group ID to use for public servers
-    Value: !GetAtt
+    Value: !GetAtt 
       - LoadBalancerSecurityGroup
       - GroupId
     Export:
       Name: !Sub '${AWS::StackName}-SecurityGroupId'
-  AvailabilityZone:
-    Description: The availability zone to use for volumes
-    Value: !GetAtt
-      - PublicSubnet
+  AvailabilityZoneA:
+    Description: Availability zone A to use for volumes
+    Value: !GetAtt 
+      - PublicSubnetA
       - AvailabilityZone
     Export:
       Name: !Sub '${AWS::StackName}-AvailabilityZone'
@@ -208,6 +197,8 @@ Metadata:
         - e707e103-85ca-46c3-81aa-cc023be37c61
         - e707e103-85ca-46c3-81aa-cc023be37c61
         - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
     7eef9d3e-c9c9-4443-90b3-861c4b7b375c:
       source:
         id: e707e103-85ca-46c3-81aa-cc023be37c61
@@ -225,6 +216,8 @@ Metadata:
       parent: e707e103-85ca-46c3-81aa-cc023be37c61
       embeds: []
       iscontainedinside:
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
         - e707e103-85ca-46c3-81aa-cc023be37c61
         - e707e103-85ca-46c3-81aa-cc023be37c61
         - e707e103-85ca-46c3-81aa-cc023be37c61
@@ -281,6 +274,8 @@ Metadata:
         - e707e103-85ca-46c3-81aa-cc023be37c61
         - e707e103-85ca-46c3-81aa-cc023be37c61
         - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
     5a55fc3b-ecb4-4de1-bdcb-b65861904227:
       size:
         width: 130
@@ -292,6 +287,8 @@ Metadata:
       parent: e707e103-85ca-46c3-81aa-cc023be37c61
       embeds: []
       iscontainedinside:
+        - e707e103-85ca-46c3-81aa-cc023be37c61
+        - e707e103-85ca-46c3-81aa-cc023be37c61
         - e707e103-85ca-46c3-81aa-cc023be37c61
         - e707e103-85ca-46c3-81aa-cc023be37c61
         - e707e103-85ca-46c3-81aa-cc023be37c61
@@ -325,14 +322,3 @@ Metadata:
         - 9f177d7e-97f7-4e62-8ea3-bd501d29e032
       iscontainedinside:
         - 16a9b5b9-a9eb-484d-b5b1-f2fec3ed1f83
-    9f177d7e-97f7-4e62-8ea3-bd501d29e032:
-      size:
-        width: 60
-        height: 60
-      position:
-        x: 60
-        'y': 0
-      z: 0
-      embeds: []
-      dependson:
-        - 7eef9d3e-c9c9-4443-90b3-861c4b7b375c
