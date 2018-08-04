@@ -486,22 +486,13 @@ Resources:
     Type: 'AWS::EC2::SubnetNetworkAclAssociation'
     Properties:
       SubnetId: !Ref PublicSubnet
-      NetworkAclId: !GetAtt
+      NetworkAclId: !GetAtt 
         - VPC
         - DefaultNetworkAcl
     Metadata:
       'AWS::CloudFormation::Designer':
         id: ed7176bb-1475-4c51-89e8-d8959196563a
-  IPAddress:
-    Type: 'AWS::EC2::EIP'
-    DependsOn: AttachGateway
-    Properties:
-      Domain: vpc
-      InstanceId: !Ref WebServerInstance
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: b0d68bfc-1338-48b0-ac38-247fd9f34309
-  InstanceSecurityGroup:
+  ProxyInstanceSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
       VpcId: !Ref VPC
@@ -518,7 +509,7 @@ Resources:
     Metadata:
       'AWS::CloudFormation::Designer':
         id: fbd52d3e-087e-46f8-b55b-c22f6d4b0c79
-  WebServerInstance:
+  ProxyInstance:
     Type: 'AWS::EC2::Instance'
     DependsOn: AttachGateway
     Metadata:
@@ -530,7 +521,7 @@ Resources:
               nginx: []
           files:
             /etc/cfn/cfn-hup.conf:
-              content: !Join
+              content: !Join 
                 - ''
                 - - |
                     [main]
@@ -546,18 +537,18 @@ Resources:
               owner: root
               group: root
             /etc/cfn/hooks.d/cfn-auto-reloader.conf:
-              content: !Join
+              content: !Join 
                 - ''
                 - - |
                     [cfn-auto-reloader-hook]
                   - |
                     triggers=post.update
                   - >
-                    path=Resources.WebServerInstance.Metadata.AWS::CloudFormation::Init
+                    path=Resources.ProxyInstance.Metadata.AWS::CloudFormation::Init
                   - 'action=/opt/aws/bin/cfn-init -v '
                   - '         --stack '
                   - !Ref 'AWS::StackName'
-                  - '         --resource WebServerInstance '
+                  - '         --resource ProxyInstance '
                   - '         --region '
                   - !Ref 'AWS::Region'
                   - |+
@@ -581,10 +572,10 @@ Resources:
       'AWS::CloudFormation::Designer':
         id: c3a5303a-dbf0-48fd-b783-1a34c6c78342
     Properties:
-      ImageId: !FindInMap
+      ImageId: !FindInMap 
         - AWSRegionArch2AMI
         - !Ref 'AWS::Region'
-        - !FindInMap
+        - !FindInMap 
           - AWSInstanceType2Arch
           - !Ref InstanceType
           - Arch
@@ -595,12 +586,12 @@ Resources:
           Value: !Ref 'AWS::StackId'
       NetworkInterfaces:
         - GroupSet:
-            - !Ref InstanceSecurityGroup
+            - !Ref ProxyInstanceSecurityGroup
           AssociatePublicIpAddress: 'true'
           DeviceIndex: '0'
           DeleteOnTermination: 'true'
           SubnetId: !Ref PublicSubnet
-      UserData: !Base64
+      UserData: !Base64 
         'Fn::Join':
           - ''
           - - |
@@ -610,7 +601,7 @@ Resources:
             - '/opt/aws/bin/cfn-init -v '
             - '         --stack '
             - !Ref 'AWS::StackName'
-            - '         --resource WebServerInstance '
+            - '         --resource ProxyInstance '
             - '         --region '
             - !Ref 'AWS::Region'
             - |+
@@ -618,20 +609,29 @@ Resources:
             - '/opt/aws/bin/cfn-signal -e $? '
             - '         --stack '
             - !Ref 'AWS::StackName'
-            - '         --resource WebServerInstance '
+            - '         --resource ProxyInstance '
             - '         --region '
             - !Ref 'AWS::Region'
-            - |+
+            - ''
     CreationPolicy:
       ResourceSignal:
         Timeout: PT5M
+  ProxyIPAddress:
+    Type: 'AWS::EC2::EIP'
+    DependsOn: AttachGateway
+    Properties:
+      Domain: vpc
+      InstanceId: !Ref ProxyInstance
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: b0d68bfc-1338-48b0-ac38-247fd9f34309
 Outputs:
   URL:
-    Value: !Join
+    Value: !Join 
       - ''
       - - 'http://'
-        - !GetAtt
-          - WebServerInstance
+        - !GetAtt 
+          - ProxyInstance
           - PublicIp
     Description: Newly created application URL
 Metadata:
@@ -655,7 +655,6 @@ Metadata:
       z: 1
       embeds:
         - fbd52d3e-087e-46f8-b55b-c22f6d4b0c79
-        - b2558e8b-3fe4-4ada-a582-24e7f8227f4f
         - f9bbaad5-d758-4b57-ac09-a2688828813b
         - b7a83aba-5f77-4922-841c-fa659d86502d
     fbd52d3e-087e-46f8-b55b-c22f6d4b0c79:
@@ -670,72 +669,7 @@ Metadata:
       embeds: []
       iscontainedinside:
         - 42f62244-d45b-415a-b97c-28cac68733bd
-    b2558e8b-3fe4-4ada-a582-24e7f8227f4f:
-      size:
-        width: 420
-        height: 330
-      position:
-        x: 120
-        'y': 330
-      z: 2
-      parent: 42f62244-d45b-415a-b97c-28cac68733bd
-      embeds:
-        - cbd3631f-67fa-4b16-8314-e74ead49e421
-        - 52f0d06d-503c-4ba6-aa1d-2cd2a8727c0b
-        - 1c6f1f21-7a61-47c9-ad05-8ac57371b977
-        - 37091852-c886-4352-aad5-718f58af63b6
-        - 88dcf913-6323-4055-9e20-b6d9d3143af0
-        - e5e1448b-485f-4cf3-b723-9b1a56f87da9
-      iscontainedinside:
         - 42f62244-d45b-415a-b97c-28cac68733bd
-    1c6f1f21-7a61-47c9-ad05-8ac57371b977:
-      size:
-        width: 60
-        height: 60
-      position:
-        x: 250
-        'y': 510
-      z: 3
-      parent: b2558e8b-3fe4-4ada-a582-24e7f8227f4f
-      embeds: []
-      iscontainedinside:
-        - b2558e8b-3fe4-4ada-a582-24e7f8227f4f
-    88dcf913-6323-4055-9e20-b6d9d3143af0:
-      size:
-        width: 60
-        height: 60
-      position:
-        x: 150
-        'y': 510
-      z: 3
-      parent: b2558e8b-3fe4-4ada-a582-24e7f8227f4f
-      embeds: []
-      iscontainedinside:
-        - b2558e8b-3fe4-4ada-a582-24e7f8227f4f
-    52f0d06d-503c-4ba6-aa1d-2cd2a8727c0b:
-      size:
-        width: 60
-        height: 60
-      position:
-        x: 350
-        'y': 390
-      z: 3
-      parent: b2558e8b-3fe4-4ada-a582-24e7f8227f4f
-      embeds: []
-      iscontainedinside:
-        - b2558e8b-3fe4-4ada-a582-24e7f8227f4f
-    e5e1448b-485f-4cf3-b723-9b1a56f87da9:
-      size:
-        width: 60
-        height: 60
-      position:
-        x: 150
-        'y': 390
-      z: 3
-      parent: b2558e8b-3fe4-4ada-a582-24e7f8227f4f
-      embeds: []
-      iscontainedinside:
-        - b2558e8b-3fe4-4ada-a582-24e7f8227f4f
     f9bbaad5-d758-4b57-ac09-a2688828813b:
       size:
         width: 240
@@ -748,6 +682,7 @@ Metadata:
       embeds:
         - e65c85ac-5ebe-4d21-83ef-e9a8557f749e
       iscontainedinside:
+        - 42f62244-d45b-415a-b97c-28cac68733bd
         - 42f62244-d45b-415a-b97c-28cac68733bd
     6c4db1cb-64b8-48ab-8edc-ee7e46cdb3ad:
       source:
@@ -769,6 +704,7 @@ Metadata:
         - a895d245-b6bf-454e-b5fd-5e490bc49308
       iscontainedinside:
         - f9bbaad5-d758-4b57-ac09-a2688828813b
+        - f9bbaad5-d758-4b57-ac09-a2688828813b
       dependson:
         - 6c4db1cb-64b8-48ab-8edc-ee7e46cdb3ad
     b7a83aba-5f77-4922-841c-fa659d86502d:
@@ -784,6 +720,7 @@ Metadata:
         - c3a5303a-dbf0-48fd-b783-1a34c6c78342
       iscontainedinside:
         - 42f62244-d45b-415a-b97c-28cac68733bd
+        - 42f62244-d45b-415a-b97c-28cac68733bd
     c3a5303a-dbf0-48fd-b783-1a34c6c78342:
       size:
         width: 60
@@ -795,6 +732,7 @@ Metadata:
       parent: b7a83aba-5f77-4922-841c-fa659d86502d
       embeds: []
       iscontainedinside:
+        - b7a83aba-5f77-4922-841c-fa659d86502d
         - b7a83aba-5f77-4922-841c-fa659d86502d
       dependson:
         - 6c4db1cb-64b8-48ab-8edc-ee7e46cdb3ad
@@ -823,27 +761,3 @@ Metadata:
       target:
         id: b7a83aba-5f77-4922-841c-fa659d86502d
       z: 2
-    37091852-c886-4352-aad5-718f58af63b6:
-      size:
-        width: 60
-        height: 60
-      position:
-        x: 250
-        'y': 390
-      z: 3
-      parent: b2558e8b-3fe4-4ada-a582-24e7f8227f4f
-      embeds: []
-      iscontainedinside:
-        - b2558e8b-3fe4-4ada-a582-24e7f8227f4f
-    cbd3631f-67fa-4b16-8314-e74ead49e421:
-      size:
-        width: 60
-        height: 60
-      position:
-        x: 350
-        'y': 510
-      z: 3
-      parent: b2558e8b-3fe4-4ada-a582-24e7f8227f4f
-      embeds: []
-      iscontainedinside:
-        - b2558e8b-3fe4-4ada-a582-24e7f8227f4f
