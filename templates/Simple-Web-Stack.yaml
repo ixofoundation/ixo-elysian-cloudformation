@@ -496,7 +496,7 @@ Resources:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
       VpcId: !Ref VPC
-      GroupDescription: Enable SSH access via port 22
+      GroupDescription: Enable HTTP traffic on port 80 & SSH access via port 22
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: '22'
@@ -625,6 +625,19 @@ Resources:
     Metadata:
       'AWS::CloudFormation::Designer':
         id: b0d68bfc-1338-48b0-ac38-247fd9f34309
+  HostInstanceSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      VpcId: !Ref VPC
+      GroupDescription: Enable SSH access via port 22
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: !Ref SSHLocation
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 7e291fcb-8470-4055-a5a7-bb2a6817b82a
 Outputs:
   URL:
     Value: !Join 
@@ -654,6 +667,7 @@ Metadata:
         'y': 270
       z: 1
       embeds:
+        - 7e291fcb-8470-4055-a5a7-bb2a6817b82a
         - fbd52d3e-087e-46f8-b55b-c22f6d4b0c79
         - f9bbaad5-d758-4b57-ac09-a2688828813b
         - b7a83aba-5f77-4922-841c-fa659d86502d
@@ -670,18 +684,26 @@ Metadata:
       iscontainedinside:
         - 42f62244-d45b-415a-b97c-28cac68733bd
         - 42f62244-d45b-415a-b97c-28cac68733bd
+        - 42f62244-d45b-415a-b97c-28cac68733bd
+        - 42f62244-d45b-415a-b97c-28cac68733bd
+        - 42f62244-d45b-415a-b97c-28cac68733bd
+        - 42f62244-d45b-415a-b97c-28cac68733bd
     f9bbaad5-d758-4b57-ac09-a2688828813b:
       size:
         width: 240
         height: 240
       position:
-        x: 420
-        'y': 720
+        x: 220
+        'y': 400
       z: 2
       parent: 42f62244-d45b-415a-b97c-28cac68733bd
       embeds:
         - e65c85ac-5ebe-4d21-83ef-e9a8557f749e
       iscontainedinside:
+        - 42f62244-d45b-415a-b97c-28cac68733bd
+        - 42f62244-d45b-415a-b97c-28cac68733bd
+        - 42f62244-d45b-415a-b97c-28cac68733bd
+        - 42f62244-d45b-415a-b97c-28cac68733bd
         - 42f62244-d45b-415a-b97c-28cac68733bd
         - 42f62244-d45b-415a-b97c-28cac68733bd
     6c4db1cb-64b8-48ab-8edc-ee7e46cdb3ad:
@@ -695,14 +717,18 @@ Metadata:
         width: 60
         height: 60
       position:
-        x: 450
-        'y': 780
+        x: 250
+        'y': 460
       z: 3
       parent: f9bbaad5-d758-4b57-ac09-a2688828813b
       embeds: []
       isassociatedwith:
         - a895d245-b6bf-454e-b5fd-5e490bc49308
       iscontainedinside:
+        - f9bbaad5-d758-4b57-ac09-a2688828813b
+        - f9bbaad5-d758-4b57-ac09-a2688828813b
+        - f9bbaad5-d758-4b57-ac09-a2688828813b
+        - f9bbaad5-d758-4b57-ac09-a2688828813b
         - f9bbaad5-d758-4b57-ac09-a2688828813b
         - f9bbaad5-d758-4b57-ac09-a2688828813b
       dependson:
@@ -721,6 +747,10 @@ Metadata:
       iscontainedinside:
         - 42f62244-d45b-415a-b97c-28cac68733bd
         - 42f62244-d45b-415a-b97c-28cac68733bd
+        - 42f62244-d45b-415a-b97c-28cac68733bd
+        - 42f62244-d45b-415a-b97c-28cac68733bd
+        - 42f62244-d45b-415a-b97c-28cac68733bd
+        - 42f62244-d45b-415a-b97c-28cac68733bd
     c3a5303a-dbf0-48fd-b783-1a34c6c78342:
       size:
         width: 60
@@ -732,6 +762,10 @@ Metadata:
       parent: b7a83aba-5f77-4922-841c-fa659d86502d
       embeds: []
       iscontainedinside:
+        - b7a83aba-5f77-4922-841c-fa659d86502d
+        - b7a83aba-5f77-4922-841c-fa659d86502d
+        - b7a83aba-5f77-4922-841c-fa659d86502d
+        - b7a83aba-5f77-4922-841c-fa659d86502d
         - b7a83aba-5f77-4922-841c-fa659d86502d
         - b7a83aba-5f77-4922-841c-fa659d86502d
       dependson:
@@ -761,3 +795,17 @@ Metadata:
       target:
         id: b7a83aba-5f77-4922-841c-fa659d86502d
       z: 2
+    7e291fcb-8470-4055-a5a7-bb2a6817b82a:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: 600
+        'y': 430
+      z: 2
+      parent: 42f62244-d45b-415a-b97c-28cac68733bd
+      embeds: []
+      iscontainedinside:
+        - 42f62244-d45b-415a-b97c-28cac68733bd
+        - 42f62244-d45b-415a-b97c-28cac68733bd
+        - 42f62244-d45b-415a-b97c-28cac68733bd
