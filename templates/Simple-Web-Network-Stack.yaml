@@ -661,7 +661,7 @@ Resources:
       KeyName: !Ref KeyName
       Tags:
         - Key: Name
-          Value: Elysian Proxy Instance
+          Value: Elysian/PDS Default Host Instance
         - Key: Stack
           Value: !Ref 'AWS::StackName'
         - Key: Application
@@ -669,7 +669,7 @@ Resources:
       NetworkInterfaces:
         - GroupSet:
             - !Ref HostInstanceSecurityGroup
-          # AssociatePublicIpAddress: 'true'
+          AssociatePublicIpAddress: 'true'
           DeviceIndex: '0'
           DeleteOnTermination: 'true'
           SubnetId: !Ref PublicSubnet
@@ -695,9 +695,9 @@ Resources:
             - '         --region '
             - !Ref 'AWS::Region'
             - ''
-    CreationPolicy:
-      ResourceSignal:
-        Timeout: PT5M
+    # CreationPolicy:
+    #   ResourceSignal:
+    #     Timeout: PT5M
 
     Metadata:
       Comment: Install NGiNX
@@ -767,6 +767,32 @@ Outputs:
           - ProxyInstance
           - PublicIp
     Description: Newly created application URL
+  VPCId:
+    Description: VPC ID
+    Value: !Ref VPC
+    Export:
+      Name: !Sub '${AWS::StackName}-VPCID'
+  PublicSubnet:
+    Description: The subnet ID to use for public web servers
+    Value: !Ref PublicSubnet
+    Export:
+      Name: !Sub '${AWS::StackName}-SubnetID'
+  HostInstanceSecurityGroup:
+    Description: The security group ID to use for public servers
+    Value: !GetAtt
+      - HostInstanceSecurityGroup
+      - GroupId
+    Export:
+      Name: !Sub '${AWS::StackName}-SecurityGroupID'
+  HostURL:
+    Value: !Join
+      - ''
+      - - 'http://'
+        - !GetAtt
+            - HostInstance
+            - PublicIp
+    Description: Newly created HostInstance URL
+
 Metadata:
   'AWS::CloudFormation::Designer':
     a895d245-b6bf-454e-b5fd-5e490bc49308:
