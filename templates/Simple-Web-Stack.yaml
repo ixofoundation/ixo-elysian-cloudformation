@@ -486,7 +486,7 @@ Resources:
     Type: 'AWS::EC2::SubnetNetworkAclAssociation'
     Properties:
       SubnetId: !Ref PublicSubnet
-      NetworkAclId: !GetAtt 
+      NetworkAclId: !GetAtt
         - VPC
         - DefaultNetworkAcl
     Metadata:
@@ -513,7 +513,7 @@ Resources:
     Type: 'AWS::EC2::Instance'
     DependsOn: AttachGateway
     Metadata:
-      Comment: Install a simple application
+      Comment: Install NGiNX
       'AWS::CloudFormation::Init':
         config:
           packages:
@@ -521,7 +521,7 @@ Resources:
               nginx: []
           files:
             /etc/cfn/cfn-hup.conf:
-              content: !Join 
+              content: !Join
                 - ''
                 - - |
                     [main]
@@ -537,7 +537,7 @@ Resources:
               owner: root
               group: root
             /etc/cfn/hooks.d/cfn-auto-reloader.conf:
-              content: !Join 
+              content: !Join
                 - ''
                 - - |
                     [cfn-auto-reloader-hook]
@@ -572,16 +572,20 @@ Resources:
       'AWS::CloudFormation::Designer':
         id: c3a5303a-dbf0-48fd-b783-1a34c6c78342
     Properties:
-      ImageId: !FindInMap 
+      ImageId: !FindInMap
         - AWSRegionArch2AMI
         - !Ref 'AWS::Region'
-        - !FindInMap 
+        - !FindInMap
           - AWSInstanceType2Arch
           - !Ref InstanceType
           - Arch
       InstanceType: !Ref InstanceType
       KeyName: !Ref KeyName
       Tags:
+        - Key: Name
+          Value: Elysian Proxy Instance
+        - Key: Stack
+          Value: !Ref 'AWS::StackName'
         - Key: Application
           Value: !Ref 'AWS::StackId'
       NetworkInterfaces:
@@ -591,7 +595,7 @@ Resources:
           DeviceIndex: '0'
           DeleteOnTermination: 'true'
           SubnetId: !Ref PublicSubnet
-      UserData: !Base64 
+      UserData: !Base64
         'Fn::Join':
           - ''
           - - |
@@ -635,15 +639,131 @@ Resources:
           FromPort: '22'
           ToPort: '22'
           CidrIp: !Ref SSHLocation
+        - IpProtocol: tcp
+          FromPort: '80'
+          ToPort: '80'
+          CidrIp: 0.0.0.0/0
     Metadata:
       'AWS::CloudFormation::Designer':
         id: 7e291fcb-8470-4055-a5a7-bb2a6817b82a
+  HostInstance:
+    Type: 'AWS::EC2::Instance'
+    DependsOn: AttachGateway
+    Properties:
+      ImageId: !FindInMap
+        - AWSRegionArch2AMI
+        - !Ref 'AWS::Region'
+        - !FindInMap
+          - AWSInstanceType2Arch
+          - !Ref InstanceType
+          - Arch
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyName
+      Tags:
+        - Key: Name
+          Value: Elysian Proxy Instance
+        - Key: Stack
+          Value: !Ref 'AWS::StackName'
+        - Key: Application
+          Value: !Ref 'AWS::StackId'
+      NetworkInterfaces:
+        - GroupSet:
+            - !Ref HostInstanceSecurityGroup
+          # AssociatePublicIpAddress: 'true'
+          DeviceIndex: '0'
+          DeleteOnTermination: 'true'
+          SubnetId: !Ref PublicSubnet
+      UserData: !Base64
+        'Fn::Join':
+          - ''
+          - - |
+              #!/bin/bash -xe
+            - |
+              yum update -y aws-cfn-bootstrap
+            - '/opt/aws/bin/cfn-init -v '
+            - '         --stack '
+            - !Ref 'AWS::StackName'
+            - '         --resource HostInstance '
+            - '         --region '
+            - !Ref 'AWS::Region'
+            - |+
+
+            - '/opt/aws/bin/cfn-signal -e $? '
+            - '         --stack '
+            - !Ref 'AWS::StackName'
+            - '         --resource HostInstance '
+            - '         --region '
+            - !Ref 'AWS::Region'
+            - ''
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: PT5M
+
+    Metadata:
+      Comment: Install NGiNX
+      'AWS::CloudFormation::Init':
+        config:
+          packages:
+            yum:
+              nginx: []
+          files:
+            /etc/cfn/cfn-hup.conf:
+              content: !Join
+                - ''
+                - - |
+                    [main]
+                  - stack=
+                  - !Ref 'AWS::StackId'
+                  - |+
+
+                  - region=
+                  - !Ref 'AWS::Region'
+                  - |+
+
+              mode: '000400'
+              owner: root
+              group: root
+            /etc/cfn/hooks.d/cfn-auto-reloader.conf:
+              content: !Join
+                - ''
+                - - |
+                    [cfn-auto-reloader-hook]
+                  - |
+                    triggers=post.update
+                  - >
+                    path=Resources.HostInstance.Metadata.AWS::CloudFormation::Init
+                  - 'action=/opt/aws/bin/cfn-init -v '
+                  - '         --stack '
+                  - !Ref 'AWS::StackName'
+                  - '         --resource HostInstance '
+                  - '         --region '
+                  - !Ref 'AWS::Region'
+                  - |+
+
+                  - |
+                    runas=root
+              mode: '000400'
+              owner: root
+              group: root
+          services:
+            sysvinit:
+              nginx:
+                enabled: 'true'
+                ensureRunning: 'true'
+              cfn-hup:
+                enabled: 'true'
+                ensureRunning: 'true'
+                files:
+                  - /etc/cfn/cfn-hup.conf
+                  - /etc/cfn/hooks.d/cfn-auto-reloader.conf
+      'AWS::CloudFormation::Designer':
+        id: 090078c2-f708-4a32-93da-435cb089eeec
 Outputs:
   URL:
-    Value: !Join 
+    Value: !Join
       - ''
       - - 'http://'
-        - !GetAtt 
+        - !GetAtt
           - ProxyInstance
           - PublicIp
     Description: Newly created application URL
@@ -688,6 +808,9 @@ Metadata:
         - 42f62244-d45b-415a-b97c-28cac68733bd
         - 42f62244-d45b-415a-b97c-28cac68733bd
         - 42f62244-d45b-415a-b97c-28cac68733bd
+        - 42f62244-d45b-415a-b97c-28cac68733bd
+        - 42f62244-d45b-415a-b97c-28cac68733bd
+        - 42f62244-d45b-415a-b97c-28cac68733bd
     f9bbaad5-d758-4b57-ac09-a2688828813b:
       size:
         width: 240
@@ -700,6 +823,9 @@ Metadata:
       embeds:
         - e65c85ac-5ebe-4d21-83ef-e9a8557f749e
       iscontainedinside:
+        - 42f62244-d45b-415a-b97c-28cac68733bd
+        - 42f62244-d45b-415a-b97c-28cac68733bd
+        - 42f62244-d45b-415a-b97c-28cac68733bd
         - 42f62244-d45b-415a-b97c-28cac68733bd
         - 42f62244-d45b-415a-b97c-28cac68733bd
         - 42f62244-d45b-415a-b97c-28cac68733bd
@@ -731,6 +857,9 @@ Metadata:
         - f9bbaad5-d758-4b57-ac09-a2688828813b
         - f9bbaad5-d758-4b57-ac09-a2688828813b
         - f9bbaad5-d758-4b57-ac09-a2688828813b
+        - f9bbaad5-d758-4b57-ac09-a2688828813b
+        - f9bbaad5-d758-4b57-ac09-a2688828813b
+        - f9bbaad5-d758-4b57-ac09-a2688828813b
       dependson:
         - 6c4db1cb-64b8-48ab-8edc-ee7e46cdb3ad
     b7a83aba-5f77-4922-841c-fa659d86502d:
@@ -743,8 +872,12 @@ Metadata:
       z: 2
       parent: 42f62244-d45b-415a-b97c-28cac68733bd
       embeds:
+        - 090078c2-f708-4a32-93da-435cb089eeec
         - c3a5303a-dbf0-48fd-b783-1a34c6c78342
       iscontainedinside:
+        - 42f62244-d45b-415a-b97c-28cac68733bd
+        - 42f62244-d45b-415a-b97c-28cac68733bd
+        - 42f62244-d45b-415a-b97c-28cac68733bd
         - 42f62244-d45b-415a-b97c-28cac68733bd
         - 42f62244-d45b-415a-b97c-28cac68733bd
         - 42f62244-d45b-415a-b97c-28cac68733bd
@@ -756,12 +889,15 @@ Metadata:
         width: 60
         height: 60
       position:
-        x: 150
-        'y': 780
+        x: 140
+        'y': 880
       z: 3
       parent: b7a83aba-5f77-4922-841c-fa659d86502d
       embeds: []
       iscontainedinside:
+        - b7a83aba-5f77-4922-841c-fa659d86502d
+        - b7a83aba-5f77-4922-841c-fa659d86502d
+        - b7a83aba-5f77-4922-841c-fa659d86502d
         - b7a83aba-5f77-4922-841c-fa659d86502d
         - b7a83aba-5f77-4922-841c-fa659d86502d
         - b7a83aba-5f77-4922-841c-fa659d86502d
@@ -809,3 +945,20 @@ Metadata:
         - 42f62244-d45b-415a-b97c-28cac68733bd
         - 42f62244-d45b-415a-b97c-28cac68733bd
         - 42f62244-d45b-415a-b97c-28cac68733bd
+        - 42f62244-d45b-415a-b97c-28cac68733bd
+        - 42f62244-d45b-415a-b97c-28cac68733bd
+        - 42f62244-d45b-415a-b97c-28cac68733bd
+    090078c2-f708-4a32-93da-435cb089eeec:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: 220
+        'y': 790
+      z: 3
+      parent: b7a83aba-5f77-4922-841c-fa659d86502d
+      embeds: []
+      iscontainedinside:
+        - b7a83aba-5f77-4922-841c-fa659d86502d
+        - b7a83aba-5f77-4922-841c-fa659d86502d
+        - b7a83aba-5f77-4922-841c-fa659d86502d
