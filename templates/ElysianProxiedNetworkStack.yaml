@@ -750,7 +750,7 @@ Resources:
                 mount /dev/xvdf /persistent-volume
 
                 mkdir /persistent-volume/backup
-                mkdir /persistent-volume/data
+                mkdir /persistent-volume/db
                 chmod -R ugo+r+w+x persistent-volume
 
                 # Persist the volume in /etc/fstab so it gets mounted again
@@ -768,11 +768,11 @@ Resources:
             create-symlink-backup-volume-permissions:
               command: chmod -R ugo+r+w+x backup
               cwd: "/home/ec2-user/elysian"
-            create-symlink-data-volume:
-              command: ln -s /persistent-volume/data data
+            create-symlink-db-volume:
+              command: ln -s /persistent-volume/db db
               cwd: "/home/ec2-user/elysian"
-            create-symlink-data-volume-permissions:
-              command: chmod -R ugo+r+w+x data
+            create-symlink-db-volume-permissions:
+              command: chmod -R ugo+r+w+x db
               cwd: "/home/ec2-user/elysian"
             docker-compose-elysian:
               command: !Sub './start.sh ${EnvironmentType}'
