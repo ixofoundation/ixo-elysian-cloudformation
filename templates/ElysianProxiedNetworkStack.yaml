@@ -569,9 +569,9 @@ Resources:
         - !Ref 'AWS::Region'
         - !FindInMap
           - AWSInstanceType2Arch
-          - !Ref ProxyInstanceType
+          - !Ref DockerHostInstanceType
           - Arch
-      ProxyInstanceType: !Ref ProxyInstanceType
+      InstanceType: !Ref DockerHostInstanceType
       KeyName: !Ref KeyName
       Tags:
         - Key: Name
