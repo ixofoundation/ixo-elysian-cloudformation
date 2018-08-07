@@ -432,7 +432,7 @@ Resources:
         config:
           packages:
             yum:
-              nginx: []
+              nginx: [1.12.1]
           files:
             /etc/cfn/cfn-hup.conf:
               content: !Join
@@ -560,6 +560,21 @@ Resources:
     Metadata:
       'AWS::CloudFormation::Designer':
         id: 7e291fcb-8470-4055-a5a7-bb2a6817b82a
+  PersistentVolume:
+    Type: AWS::EC2::Volume
+    DeletionPolicy: Retain
+    Properties:
+      AvailabilityZone: !GetAtt
+        - PublicSubnet
+        - AvailabilityZone
+      VolumeType: gp2
+      Size: 16
+      Tags:
+        - Key: "Name"
+          Value: !Join [ '-', [ !Ref 'AWS::StackName', 'PersistentVolume' ] ]
+        - Key: "Stack"
+          Value: !Ref 'AWS::StackName'
+
   HostInstance:
     Type: 'AWS::EC2::Instance'
     DependsOn: AttachGateway
