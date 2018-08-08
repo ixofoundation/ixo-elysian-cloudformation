@@ -1,0 +1,1063 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  AWS CloudFormation template instantiating a Network stack as well as a NGinX Proxy fromting
+  a single default Elysian PDS (Personal Data Store) instance. To enable the creation of additional
+  PDS instances the neccesary Resources are exported for Cross-Stack utilization.
+  Exported resources:
+    - VPCId
+    - PublicSubnetId
+    - HostInstanceSecurityGroupId
+    - AvailabilityZone
+    - KeyName
+Parameters:
+  ProxyInstanceType:
+    Description: EC2 instance type to apply when creating the Proxy  EC2 Instance
+    Type: String
+    Default: t2.small
+    AllowedValues:
+      - t1.micro
+      - t2.nano
+      - t2.micro
+      - t2.small
+      - t2.medium
+      - t2.large
+      - m1.small
+      - m1.medium
+      - m1.large
+      - m1.xlarge
+      - m2.xlarge
+      - m2.2xlarge
+      - m2.4xlarge
+      - m3.medium
+      - m3.large
+      - m3.xlarge
+      - m3.2xlarge
+      - m4.large
+      - m4.xlarge
+      - m4.2xlarge
+      - m4.4xlarge
+      - m4.10xlarge
+      - c1.medium
+      - c1.xlarge
+      - c3.large
+      - c3.xlarge
+      - c3.2xlarge
+      - c3.4xlarge
+      - c3.8xlarge
+      - c4.large
+      - c4.xlarge
+      - c4.2xlarge
+      - c4.4xlarge
+      - c4.8xlarge
+      - g2.2xlarge
+      - g2.8xlarge
+      - r3.large
+      - r3.xlarge
+      - r3.2xlarge
+      - r3.4xlarge
+      - r3.8xlarge
+      - i2.xlarge
+      - i2.2xlarge
+      - i2.4xlarge
+      - i2.8xlarge
+      - d2.xlarge
+      - d2.2xlarge
+      - d2.4xlarge
+      - d2.8xlarge
+      - hi1.4xlarge
+      - hs1.8xlarge
+      - cr1.8xlarge
+      - cc2.8xlarge
+      - cg1.4xlarge
+    ConstraintDescription: must be a valid EC2 instance type.
+  DockerHostInstanceType:
+    Description: EC2 instance type to apply when creating the DockerHost EC2 Instance
+    Type: String
+    Default: t2.medium
+    AllowedValues:
+      - t1.micro
+      - t2.nano
+      - t2.micro
+      - t2.small
+      - t2.medium
+      - t2.large
+      - m1.small
+      - m1.medium
+      - m1.large
+      - m1.xlarge
+      - m2.xlarge
+      - m2.2xlarge
+      - m2.4xlarge
+      - m3.medium
+      - m3.large
+      - m3.xlarge
+      - m3.2xlarge
+      - m4.large
+      - m4.xlarge
+      - m4.2xlarge
+      - m4.4xlarge
+      - m4.10xlarge
+      - c1.medium
+      - c1.xlarge
+      - c3.large
+      - c3.xlarge
+      - c3.2xlarge
+      - c3.4xlarge
+      - c3.8xlarge
+      - c4.large
+      - c4.xlarge
+      - c4.2xlarge
+      - c4.4xlarge
+      - c4.8xlarge
+      - g2.2xlarge
+      - g2.8xlarge
+      - r3.large
+      - r3.xlarge
+      - r3.2xlarge
+      - r3.4xlarge
+      - r3.8xlarge
+      - i2.xlarge
+      - i2.2xlarge
+      - i2.4xlarge
+      - i2.8xlarge
+      - d2.xlarge
+      - d2.2xlarge
+      - d2.4xlarge
+      - d2.8xlarge
+      - hi1.4xlarge
+      - hs1.8xlarge
+      - cr1.8xlarge
+      - cc2.8xlarge
+      - cg1.4xlarge
+    ConstraintDescription: must be a valid EC2 instance type.
+  VolumeSize:
+    Description: Size in GB for persistent volume on EBS
+    Type: Number
+    Default: 16
+  KeyName:
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the instances
+    Type: 'AWS::EC2::KeyPair::KeyName'
+    ConstraintDescription: must be the name of an existing EC2 KeyPair.
+    Default: ixoworld.xyz
+  SSHLocation:
+    Description: ' The IP address range that can be used to SSH to the EC2 instances'
+    Type: String
+    MinLength: '9'
+    MaxLength: '18'
+    Default: 0.0.0.0/0
+    AllowedPattern: '(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})'
+    ConstraintDescription: must be a valid IP CIDR range of the form x.x.x.x/x.
+  HostDomain:
+    Description: ' The domain name'
+    Type: String
+    MinLength: '4'
+    MaxLength: '200'
+    Default: 'ixo.world'
+    ConstraintDescription: must be a valid domain name
+  SubDomain:
+    Description: ' The subdomain'
+    Type: String
+    MinLength: '2'
+    MaxLength: '53'
+    Default: 'default'
+    ConstraintDescription: must be a valid subdomain
+Mappings:
+  AWSInstanceType2Arch:
+    t1.micro:
+      Arch: PV64
+    t2.nano:
+      Arch: HVM64
+    t2.micro:
+      Arch: HVM64
+    t2.small:
+      Arch: HVM64
+    t2.medium:
+      Arch: HVM64
+    t2.large:
+      Arch: HVM64
+    m1.small:
+      Arch: PV64
+    m1.medium:
+      Arch: PV64
+    m1.large:
+      Arch: PV64
+    m1.xlarge:
+      Arch: PV64
+    m2.xlarge:
+      Arch: PV64
+    m2.2xlarge:
+      Arch: PV64
+    m2.4xlarge:
+      Arch: PV64
+    m3.medium:
+      Arch: HVM64
+    m3.large:
+      Arch: HVM64
+    m3.xlarge:
+      Arch: HVM64
+    m3.2xlarge:
+      Arch: HVM64
+    m4.large:
+      Arch: HVM64
+    m4.xlarge:
+      Arch: HVM64
+    m4.2xlarge:
+      Arch: HVM64
+    m4.4xlarge:
+      Arch: HVM64
+    m4.10xlarge:
+      Arch: HVM64
+    c1.medium:
+      Arch: PV64
+    c1.xlarge:
+      Arch: PV64
+    c3.large:
+      Arch: HVM64
+    c3.xlarge:
+      Arch: HVM64
+    c3.2xlarge:
+      Arch: HVM64
+    c3.4xlarge:
+      Arch: HVM64
+    c3.8xlarge:
+      Arch: HVM64
+    c4.large:
+      Arch: HVM64
+    c4.xlarge:
+      Arch: HVM64
+    c4.2xlarge:
+      Arch: HVM64
+    c4.4xlarge:
+      Arch: HVM64
+    c4.8xlarge:
+      Arch: HVM64
+    g2.2xlarge:
+      Arch: HVMG2
+    g2.8xlarge:
+      Arch: HVMG2
+    r3.large:
+      Arch: HVM64
+    r3.xlarge:
+      Arch: HVM64
+    r3.2xlarge:
+      Arch: HVM64
+    r3.4xlarge:
+      Arch: HVM64
+    r3.8xlarge:
+      Arch: HVM64
+    i2.xlarge:
+      Arch: HVM64
+    i2.2xlarge:
+      Arch: HVM64
+    i2.4xlarge:
+      Arch: HVM64
+    i2.8xlarge:
+      Arch: HVM64
+    d2.xlarge:
+      Arch: HVM64
+    d2.2xlarge:
+      Arch: HVM64
+    d2.4xlarge:
+      Arch: HVM64
+    d2.8xlarge:
+      Arch: HVM64
+    hi1.4xlarge:
+      Arch: HVM64
+    hs1.8xlarge:
+      Arch: HVM64
+    cr1.8xlarge:
+      Arch: HVM64
+    cc2.8xlarge:
+      Arch: HVM64
+  AWSRegionArch2AMI:
+    us-east-1:
+      PV64: ami-2a69aa47
+      HVM64: ami-97785bed
+      HVMG2: ami-0a6e3770
+    us-west-2:
+      PV64: ami-7f77b31f
+      HVM64: ami-f2d3638a
+      HVMG2: ami-ee15a196
+    us-west-1:
+      PV64: ami-a2490dc2
+      HVM64: ami-824c4ee2
+      HVMG2: ami-0da4a46d
+    eu-west-1:
+      PV64: ami-4cdd453f
+      HVM64: ami-d834aba1
+      HVMG2: ami-af8013d6
+    eu-west-2:
+      PV64: NOT_SUPPORTED
+      HVM64: ami-403e2524
+      HVMG2: NOT_SUPPORTED
+    eu-west-3:
+      PV64: NOT_SUPPORTED
+      HVM64: ami-8ee056f3
+      HVMG2: NOT_SUPPORTED
+    eu-central-1:
+      PV64: ami-6527cf0a
+      HVM64: ami-5652ce39
+      HVMG2: ami-1d58ca72
+    ap-northeast-1:
+      PV64: ami-3e42b65f
+      HVM64: ami-ceafcba8
+      HVMG2: ami-edfd658b
+    ap-northeast-2:
+      PV64: NOT_SUPPORTED
+      HVM64: ami-863090e8
+      HVMG2: NOT_SUPPORTED
+    ap-northeast-3:
+      PV64: NOT_SUPPORTED
+      HVM64: ami-83444afe
+      HVMG2: NOT_SUPPORTED
+    ap-southeast-1:
+      PV64: ami-df9e4cbc
+      HVM64: ami-68097514
+      HVMG2: ami-c06013bc
+    ap-southeast-2:
+      PV64: ami-63351d00
+      HVM64: ami-942dd1f6
+      HVMG2: ami-85ef12e7
+    ap-south-1:
+      PV64: NOT_SUPPORTED
+      HVM64: ami-531a4c3c
+      HVMG2: ami-411e492e
+    us-east-2:
+      PV64: NOT_SUPPORTED
+      HVM64: ami-f63b1193
+      HVMG2: NOT_SUPPORTED
+    ca-central-1:
+      PV64: NOT_SUPPORTED
+      HVM64: ami-a954d1cd
+      HVMG2: NOT_SUPPORTED
+    sa-east-1:
+      PV64: ami-1ad34676
+      HVM64: ami-84175ae8
+      HVMG2: NOT_SUPPORTED
+    cn-north-1:
+      PV64: ami-77559f1a
+      HVM64: ami-cb19c4a6
+      HVMG2: NOT_SUPPORTED
+    cn-northwest-1:
+      PV64: ami-80707be2
+      HVM64: ami-3e60745c
+      HVMG2: NOT_SUPPORTED
+Resources:
+  VPC:
+    Type: 'AWS::EC2::VPC'
+    Properties:
+      EnableDnsSupport: 'true'
+      EnableDnsHostnames: 'true'
+      CidrBlock: 10.0.0.0/16
+      Tags:
+        - Key: Application
+          Value: !Ref 'AWS::StackId'
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 42f62244-d45b-415a-b97c-28cac68733bd
+  PublicSubnet:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.0.0/24
+      Tags:
+        - Key: Application
+          Value: !Ref 'AWS::StackId'
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: b7a83aba-5f77-4922-841c-fa659d86502d
+  InternetGateway:
+    Type: 'AWS::EC2::InternetGateway'
+    Properties:
+      Tags:
+        - Key: Application
+          Value: !Ref 'AWS::StackId'
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: a895d245-b6bf-454e-b5fd-5e490bc49308
+  AttachGateway:
+    Type: 'AWS::EC2::VPCGatewayAttachment'
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 6c4db1cb-64b8-48ab-8edc-ee7e46cdb3ad
+  RouteTable:
+    Type: 'AWS::EC2::RouteTable'
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Application
+          Value: !Ref 'AWS::StackId'
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: f9bbaad5-d758-4b57-ac09-a2688828813b
+  Route:
+    Type: 'AWS::EC2::Route'
+    DependsOn: AttachGateway
+    Properties:
+      RouteTableId: !Ref RouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: e65c85ac-5ebe-4d21-83ef-e9a8557f749e
+  SubnetRouteTableAssociation:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      SubnetId: !Ref PublicSubnet
+      RouteTableId: !Ref RouteTable
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 75a2a437-5dba-4037-bac8-fc1ac9cce3f7
+  SubnetNetworkAclAssociation:
+    Type: 'AWS::EC2::SubnetNetworkAclAssociation'
+    Properties:
+      SubnetId: !Ref PublicSubnet
+      NetworkAclId: !GetAtt
+        - VPC
+        - DefaultNetworkAcl
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: ed7176bb-1475-4c51-89e8-d8959196563a
+  ProxyInstanceSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      VpcId: !Ref VPC
+      GroupDescription: Enable HTTP traffic on port 80, HTTPS traffic on port 443 & SSH access via port 22
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: !Ref SSHLocation
+        - IpProtocol: tcp
+          FromPort: '80'
+          ToPort: '80'
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: '443'
+          ToPort: '443'
+          CidrIp: 0.0.0.0/0
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: fbd52d3e-087e-46f8-b55b-c22f6d4b0c79
+  ProxyInstance:
+    Type: 'AWS::EC2::Instance'
+    DependsOn:
+      - AttachGateway
+      - HostInstance
+    Metadata:
+      'AWS::CloudFormation::Init':
+        configSets:
+          Prepare:
+            - PrepareCfnHup
+            - PrepareNGiNX
+          Start:
+            - StartNGiNX
+        PrepareCfnHup:
+          files:
+            /etc/cfn/cfn-hup.conf:
+              content: !Join
+                - ''
+                - - |
+                    [main]
+                  - stack=
+                  - !Ref 'AWS::StackId'
+                  - |+
+
+                  - region=
+                  - !Ref 'AWS::Region'
+                  - |+
+
+              mode: '000400'
+              owner: root
+              group: root
+            /etc/cfn/hooks.d/cfn-auto-reloader.conf:
+              content: !Join
+                - ''
+                - - |
+                    [cfn-auto-reloader-hook]
+                  - |
+                    triggers=post.update
+                  - >
+                    path=Resources.ProxyInstance.Metadata.AWS::CloudFormation::Init
+                  - 'action=/opt/aws/bin/cfn-init -v '
+                  - '         --stack '
+                  - !Ref 'AWS::StackName'
+                  - '         --resource ProxyInstance '
+                  - '         --region '
+                  - !Ref 'AWS::Region'
+                  - |+
+
+                  - |
+                    runas=root
+              mode: '000400'
+              owner: root
+              group: root
+          services:
+            sysvinit:
+              cfn-hup:
+                enabled: 'true'
+                ensureRunning: 'true'
+                files:
+                  - /etc/cfn/cfn-hup.conf
+                  - /etc/cfn/hooks.d/cfn-auto-reloader.conf
+        PrepareNGiNX:
+          packages:
+            yum:
+              nginx: [1.12.1]
+          files:
+            /etc/nginx/conf.d/default.conf.eg:
+              content: !Sub |
+                '#server {'
+                '#    server_name  SUB_DOMAIN.HOST_DOMAIN;'
+                '#'
+                '#    location / {'
+                '#	      proxy_pass   http://PRIVATE_IP:5000;'
+                '#    }'
+                '#}'
+              mode: '000400'
+              owner: root
+              group: root
+          commands:
+            adjust-nginx-root-location-proxy-pass:
+              command: |
+                sed -i '1, 100 s/location \/ {/location \/ { \
+                            proxy_pass   PASS_ADDRESS:5000;/' nginx.conf
+              cwd: "/etc/nginx"
+            set-nginx-root-location-proxy-pass-address:
+              command: !Sub
+                - "sed -i 's/PASS_ADDRESS/${privateIp}/g' nginx.conf"
+                - privateIp: !Join ['', ['http', ':\/\/', !GetAtt HostInstance.PrivateIp]]
+              cwd: "/etc/nginx"
+        StartNGiNX:
+          services:
+            sysvinit:
+              nginx:
+                enabled: 'true'
+                ensureRunning: 'true'
+      'AWS::CloudFormation::Designer':
+        id: c3a5303a-dbf0-48fd-b783-1a34c6c78342
+    Properties:
+      ImageId: !FindInMap
+        - AWSRegionArch2AMI
+        - !Ref 'AWS::Region'
+        - !FindInMap
+          - AWSInstanceType2Arch
+          - !Ref ProxyInstanceType
+          - Arch
+      InstanceType: !Ref ProxyInstanceType
+      KeyName: !Ref KeyName
+      Tags:
+        - Key: Name
+          Value: Elysian Proxy Instance
+        - Key: Stack
+          Value: !Ref 'AWS::StackName'
+        - Key: Application
+          Value: !Ref 'AWS::StackId'
+      NetworkInterfaces:
+        - GroupSet:
+            - !Ref ProxyInstanceSecurityGroup
+          AssociatePublicIpAddress: 'true'
+          DeviceIndex: '0'
+          DeleteOnTermination: 'true'
+          SubnetId: !Ref PublicSubnet
+      UserData: !Base64
+        'Fn::Join':
+          - ''
+          - - |
+              #!/bin/bash -xe
+            - |
+              yum update -y aws-cfn-bootstrap
+
+            - '/opt/aws/bin/cfn-init -v '
+            - '         --stack '
+            - !Ref 'AWS::StackName'
+            - '         --resource ProxyInstance '
+            - '         --configsets Prepare '
+            - '         --region '
+            - !Ref 'AWS::Region'
+            - |+
+
+            - '/opt/aws/bin/cfn-init -v '
+            - '         --stack '
+            - !Ref 'AWS::StackName'
+            - '         --resource ProxyInstance '
+            - '         --configsets Start '
+            - '         --region '
+            - !Ref 'AWS::Region'
+            - |+
+
+            - '/opt/aws/bin/cfn-signal -e $? '
+            - '         --stack '
+            - !Ref 'AWS::StackName'
+            - '         --resource ProxyInstance '
+            - '         --region '
+            - !Ref 'AWS::Region'
+            - ''
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: PT5M
+  ProxyIPAddress:
+    Type: 'AWS::EC2::EIP'
+    DependsOn: AttachGateway
+    Properties:
+      Domain: vpc
+      InstanceId: !Ref ProxyInstance
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: b0d68bfc-1338-48b0-ac38-247fd9f34309
+  HostInstanceSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      VpcId: !Ref VPC
+      GroupDescription: Enable SSH access via port 22
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: !Ref SSHLocation
+        - IpProtocol: tcp
+          FromPort: '5000'
+          ToPort: '5000'
+          CidrIp: 0.0.0.0/0
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 7e291fcb-8470-4055-a5a7-bb2a6817b82a
+  PersistentVolume:
+    Type: AWS::EC2::Volume
+    DeletionPolicy: Retain
+    Properties:
+      AvailabilityZone: !GetAtt
+        - PublicSubnet
+        - AvailabilityZone
+      VolumeType: gp2
+      Size: !Ref VolumeSize
+      Tags:
+        - Key: "Name"
+          Value: !Join [ '-', [ !Ref 'AWS::StackName', 'PersistentVolume' ] ]
+        - Key: "Stack"
+          Value: !Ref 'AWS::StackName'
+  HostInstance:
+    Type: 'AWS::EC2::Instance'
+    DependsOn: AttachGateway
+    Properties:
+      InstanceType: !Ref DockerHostInstanceType
+      ImageId: !FindInMap
+        - AWSRegionArch2AMI
+        - !Ref 'AWS::Region'
+        - !FindInMap
+          - AWSInstanceType2Arch
+          - !Ref DockerHostInstanceType
+          - Arch
+      KeyName: !Ref KeyName
+      Monitoring: true
+      NetworkInterfaces:
+        - GroupSet:
+            - !Ref HostInstanceSecurityGroup
+          AssociatePublicIpAddress: 'true'
+          DeviceIndex: '0'
+          DeleteOnTermination: 'true'
+          SubnetId: !Ref PublicSubnet
+      Volumes:
+        - VolumeId: !Ref PersistentVolume
+          Device: /dev/sdf
+      UserData: !Base64
+        'Fn::Join':
+          - ''
+          - - |
+              #!/bin/bash -xe
+            - |
+              yum update -y aws-cfn-bootstrap
+            - '/opt/aws/bin/cfn-init -v '
+            - '         --stack '
+            - !Ref 'AWS::StackName'
+            - '         --resource HostInstance '
+            - '         --configsets Prepare '
+            - '         --region '
+            - !Ref 'AWS::Region'
+            - |+
+
+            - /tmp/wait-for-volume-and-format-filesystem.sh
+            - |+
+
+            - rm /tmp/wait-for-volume-and-format-filesystem.sh
+            - |+
+
+            - '/opt/aws/bin/cfn-init -v '
+            - '         --stack '
+            - !Ref 'AWS::StackName'
+            - '         --resource HostInstance '
+            - '         --configsets Deploy '
+            - '         --region '
+            - !Ref 'AWS::Region'
+            - |+
+
+            - '/opt/aws/bin/cfn-signal -e $? '
+            - '         --stack '
+            - !Ref 'AWS::StackName'
+            - '         --resource HostInstance '
+            - '         --region '
+            - !Ref 'AWS::Region'
+            - ''
+      Tags:
+        - Key: Name
+          Value: Elysian/PDS Default Host Instance
+        - Key: Stack
+          Value: !Ref 'AWS::StackName'
+        - Key: Application
+          Value: !Ref 'AWS::StackId'
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: PT15M
+    Metadata:
+      Comment: Prepare Elysian PDS
+      'AWS::CloudFormation::Init':
+        configSets:
+          Prepare:
+            - PrepareDocker
+            - PrepareElysian
+            - PreparePersistentFilesystemLinkingScript
+          Deploy:
+            - DeployElysian
+        PrepareDocker:
+          packages:
+            yum:
+              docker: []
+          users:
+            "ec2-user":
+              groups:
+                - "docker"
+          commands:
+            docker-compose-get:
+              command: "sudo curl -L https://github.com/docker/compose/releases/download/1.22.0/docker-compose-$(uname -s)-$(uname -m) -o docker-compose"
+              cwd: "/usr/local/bin/"
+            docker-compose-permissions:
+              command: "sudo chmod +x docker-compose"
+              cwd: "/usr/local/bin/"
+            docker-compose-root:
+              command: "ln -s /usr/local/bin/docker-compose docker-compose"
+              cwd: "/bin"
+            docker-compose-version:
+              command: "docker-compose --version"
+              cwd: "/home/ec2-user"
+          services:
+            sysvinit:
+              docker:
+                enabled: 'true'
+                ensureRunning: 'true'
+        PrepareElysian:
+          sources:
+            "/home/ec2-user/ixo-pds-repository": "https://github.com/ixofoundation/ixo-pds/tarball/master"
+          commands:
+            create-deployment-dir:
+              command: mkdir -p elysian/bin
+              cwd: "/home/ec2-user"
+            extract-docker-app-container-config:
+              command: cp ixo-pds-repository/config.json elysian/
+              cwd: "/home/ec2-user"
+            extract-docker-compose:
+              command: cp ixo-pds-repository/docker-compose.yml elysian/
+              cwd: "/home/ec2-user"
+            extract-docker-compose-dev:
+              command: cp ixo-pds-repository/docker-compose.dev.yml elysian/
+              cwd: "/home/ec2-user"
+            extract-docker-compose-prod:
+              command: cp ixo-pds-repository/docker-compose.prod.yml elysian/
+              cwd: "/home/ec2-user"
+            extract-elysian-scripts:
+              command: cp ixo-pds-repository/bin/* elysian/bin
+              cwd: "/home/ec2-user"
+            remove-build-in-docker-compose:
+              command: sed -i 's/build/# build/g' docker-compose.yml
+              cwd: "/home/ec2-user/elysian"
+            remove-repository:
+              command: rm -rf ixo-pds-repository
+              cwd: "/home/ec2-user"
+        PreparePersistentFilesystemLinkingScript:
+          files:
+            "/tmp/wait-for-volume-and-format-filesystem.sh":
+              content: !Sub |
+                #!/bin/bash -xe
+                #
+                # See: http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-using-volumes.html
+                #
+                # Make sure volume has been created AND attached to this instance !
+                #
+                # We do not need a loop counter in the "until" statements below because
+                # there is a 5 minute limit on the CreationPolicy for this EC2 instance already.
+
+
+                ######################################################################
+                # Volume /dev/sdf (which will get created as /dev/xvdf on Amazon Linux)
+
+                while [ ! -e /dev/sdf ];
+                do
+                  echo waiting for /dev/sdf to attach
+                  sleep 5
+                done
+
+                # Format /dev/xvdf if it does not contain a partition yet
+                if [ "$(file -b -s /dev/xvdf)" == "data" ]; then
+                  mkfs -t ext4 /dev/xvdf
+                fi
+
+                mkdir -p /persistent-volume
+                mount /dev/xvdf /persistent-volume
+
+                mkdir /persistent-volume/backup
+                mkdir /persistent-volume/db
+                chmod -R ugo+r+w+x persistent-volume
+
+                # Persist the volume in /etc/fstab so it gets mounted again
+                echo '/dev/xvdf /persistent-volume ext4 defaults,nofail 0 2' >> /etc/fstab
+
+                lsblk
+              mode: '000777'
+              owner: root
+              group: root
+        DeployElysian:
+          commands:
+            create-symlink-backup-volume:
+              command: ln -s /persistent-volume/backup backup
+              cwd: "/home/ec2-user/elysian"
+            create-symlink-backup-volume-permissions:
+              command: chmod -R ugo+r+w+x backup
+              cwd: "/home/ec2-user/elysian"
+            create-symlink-db-volume:
+              command: ln -s /persistent-volume/db db
+              cwd: "/home/ec2-user/elysian"
+            create-symlink-db-volume-permissions:
+              command: chmod -R ugo+r+w+x db
+              cwd: "/home/ec2-user/elysian"
+            docker-compose-elysian:
+              command: './bin/start.sh'
+              cwd: "/home/ec2-user/elysian"
+              env:
+                HOME: "/home/ec2-user/elysian"
+      'AWS::CloudFormation::Designer':
+        id: 090078c2-f708-4a32-93da-435cb089eeec
+Outputs:
+  VPCId:
+    Description: VPC
+    Value: !Ref VPC
+    Export:
+      Name: !Sub '${AWS::StackName}-VPC-Id'
+  PublicSubnetId:
+    Description: The subnet ID to use for public web servers
+    Value: !Ref PublicSubnet
+    Export:
+      Name: !Sub '${AWS::StackName}-PublicSubnet-Id'
+  HostInstanceSecurityGroupId:
+    Description: The security group Id to use for public servers
+    Value: !Ref HostInstanceSecurityGroup
+    Export:
+      Name: !Sub '${AWS::StackName}-HostInstanceSecurityGroup-Id'
+  AvailabilityZone:
+    Description: The availability zone to use for persistent volumes
+    Value: !GetAtt
+      - PublicSubnet
+      - AvailabilityZone
+    Export:
+      Name: !Sub '${AWS::StackName}-AvailabilityZone'
+  SSHKey:
+    Description: The EC2 KeyPair to enable SSH access to the instances
+    Value: !Ref KeyName
+    Export:
+      Name: !Sub '${AWS::StackName}-SSHKey'
+Metadata:
+  'AWS::CloudFormation::Designer':
+    a895d245-b6bf-454e-b5fd-5e490bc49308:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: 900
+        'y': 90
+      z: 1
+      embeds: []
+    42f62244-d45b-415a-b97c-28cac68733bd:
+      size:
+        width: 780
+        height: 780
+      position:
+        x: 90
+        'y': 270
+      z: 1
+      embeds:
+        - 7e291fcb-8470-4055-a5a7-bb2a6817b82a
+        - fbd52d3e-087e-46f8-b55b-c22f6d4b0c79
+        - f9bbaad5-d758-4b57-ac09-a2688828813b
+        - b7a83aba-5f77-4922-841c-fa659d86502d
+    fbd52d3e-087e-46f8-b55b-c22f6d4b0c79:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: 600
+        'y': 330
+      z: 2
+      parent: 42f62244-d45b-415a-b97c-28cac68733bd
+      embeds: []
+      iscontainedinside:
+        - 42f62244-d45b-415a-b97c-28cac68733bd
+        - 42f62244-d45b-415a-b97c-28cac68733bd
+        - 42f62244-d45b-415a-b97c-28cac68733bd
+        - 42f62244-d45b-415a-b97c-28cac68733bd
+        - 42f62244-d45b-415a-b97c-28cac68733bd
+        - 42f62244-d45b-415a-b97c-28cac68733bd
+        - 42f62244-d45b-415a-b97c-28cac68733bd
+        - 42f62244-d45b-415a-b97c-28cac68733bd
+        - 42f62244-d45b-415a-b97c-28cac68733bd
+    f9bbaad5-d758-4b57-ac09-a2688828813b:
+      size:
+        width: 240
+        height: 240
+      position:
+        x: 220
+        'y': 400
+      z: 2
+      parent: 42f62244-d45b-415a-b97c-28cac68733bd
+      embeds:
+        - e65c85ac-5ebe-4d21-83ef-e9a8557f749e
+      iscontainedinside:
+        - 42f62244-d45b-415a-b97c-28cac68733bd
+        - 42f62244-d45b-415a-b97c-28cac68733bd
+        - 42f62244-d45b-415a-b97c-28cac68733bd
+        - 42f62244-d45b-415a-b97c-28cac68733bd
+        - 42f62244-d45b-415a-b97c-28cac68733bd
+        - 42f62244-d45b-415a-b97c-28cac68733bd
+        - 42f62244-d45b-415a-b97c-28cac68733bd
+        - 42f62244-d45b-415a-b97c-28cac68733bd
+        - 42f62244-d45b-415a-b97c-28cac68733bd
+    6c4db1cb-64b8-48ab-8edc-ee7e46cdb3ad:
+      source:
+        id: 42f62244-d45b-415a-b97c-28cac68733bd
+      target:
+        id: a895d245-b6bf-454e-b5fd-5e490bc49308
+      z: 1
+    e65c85ac-5ebe-4d21-83ef-e9a8557f749e:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: 250
+        'y': 460
+      z: 3
+      parent: f9bbaad5-d758-4b57-ac09-a2688828813b
+      embeds: []
+      isassociatedwith:
+        - a895d245-b6bf-454e-b5fd-5e490bc49308
+      iscontainedinside:
+        - f9bbaad5-d758-4b57-ac09-a2688828813b
+        - f9bbaad5-d758-4b57-ac09-a2688828813b
+        - f9bbaad5-d758-4b57-ac09-a2688828813b
+        - f9bbaad5-d758-4b57-ac09-a2688828813b
+        - f9bbaad5-d758-4b57-ac09-a2688828813b
+        - f9bbaad5-d758-4b57-ac09-a2688828813b
+        - f9bbaad5-d758-4b57-ac09-a2688828813b
+        - f9bbaad5-d758-4b57-ac09-a2688828813b
+        - f9bbaad5-d758-4b57-ac09-a2688828813b
+      dependson:
+        - 6c4db1cb-64b8-48ab-8edc-ee7e46cdb3ad
+    b7a83aba-5f77-4922-841c-fa659d86502d:
+      size:
+        width: 240
+        height: 240
+      position:
+        x: 120
+        'y': 720
+      z: 2
+      parent: 42f62244-d45b-415a-b97c-28cac68733bd
+      embeds:
+        - 090078c2-f708-4a32-93da-435cb089eeec
+        - c3a5303a-dbf0-48fd-b783-1a34c6c78342
+      iscontainedinside:
+        - 42f62244-d45b-415a-b97c-28cac68733bd
+        - 42f62244-d45b-415a-b97c-28cac68733bd
+        - 42f62244-d45b-415a-b97c-28cac68733bd
+        - 42f62244-d45b-415a-b97c-28cac68733bd
+        - 42f62244-d45b-415a-b97c-28cac68733bd
+        - 42f62244-d45b-415a-b97c-28cac68733bd
+        - 42f62244-d45b-415a-b97c-28cac68733bd
+        - 42f62244-d45b-415a-b97c-28cac68733bd
+        - 42f62244-d45b-415a-b97c-28cac68733bd
+    c3a5303a-dbf0-48fd-b783-1a34c6c78342:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: 140
+        'y': 880
+      z: 3
+      parent: b7a83aba-5f77-4922-841c-fa659d86502d
+      embeds: []
+      iscontainedinside:
+        - b7a83aba-5f77-4922-841c-fa659d86502d
+        - b7a83aba-5f77-4922-841c-fa659d86502d
+        - b7a83aba-5f77-4922-841c-fa659d86502d
+        - b7a83aba-5f77-4922-841c-fa659d86502d
+        - b7a83aba-5f77-4922-841c-fa659d86502d
+        - b7a83aba-5f77-4922-841c-fa659d86502d
+        - b7a83aba-5f77-4922-841c-fa659d86502d
+        - b7a83aba-5f77-4922-841c-fa659d86502d
+        - b7a83aba-5f77-4922-841c-fa659d86502d
+      dependson:
+        - 6c4db1cb-64b8-48ab-8edc-ee7e46cdb3ad
+    b0d68bfc-1338-48b0-ac38-247fd9f34309:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: 900
+        'y': 210
+      z: 1
+      embeds: []
+      isassociatedwith:
+        - c3a5303a-dbf0-48fd-b783-1a34c6c78342
+      dependson:
+        - 6c4db1cb-64b8-48ab-8edc-ee7e46cdb3ad
+    ed7176bb-1475-4c51-89e8-d8959196563a:
+      source:
+        id: b2558e8b-3fe4-4ada-a582-24e7f8227f4f
+      target:
+        id: b7a83aba-5f77-4922-841c-fa659d86502d
+      z: 2
+    75a2a437-5dba-4037-bac8-fc1ac9cce3f7:
+      source:
+        id: f9bbaad5-d758-4b57-ac09-a2688828813b
+      target:
+        id: b7a83aba-5f77-4922-841c-fa659d86502d
+      z: 2
+    7e291fcb-8470-4055-a5a7-bb2a6817b82a:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: 600
+        'y': 430
+      z: 2
+      parent: 42f62244-d45b-415a-b97c-28cac68733bd
+      embeds: []
+      iscontainedinside:
+        - 42f62244-d45b-415a-b97c-28cac68733bd
+        - 42f62244-d45b-415a-b97c-28cac68733bd
+        - 42f62244-d45b-415a-b97c-28cac68733bd
+        - 42f62244-d45b-415a-b97c-28cac68733bd
+        - 42f62244-d45b-415a-b97c-28cac68733bd
+        - 42f62244-d45b-415a-b97c-28cac68733bd
+    090078c2-f708-4a32-93da-435cb089eeec:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: 220
+        'y': 790
+      z: 3
+      parent: b7a83aba-5f77-4922-841c-fa659d86502d
+      embeds: []
+      iscontainedinside:
+        - b7a83aba-5f77-4922-841c-fa659d86502d
+        - b7a83aba-5f77-4922-841c-fa659d86502d
+        - b7a83aba-5f77-4922-841c-fa659d86502d
