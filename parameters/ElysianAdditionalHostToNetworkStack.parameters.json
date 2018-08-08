@@ -1,0 +1,18 @@
+[
+  {
+    "ParameterKey": "NetworkStackName",
+    "ParameterValue": "Elysian-Proxied-Network-Stack"
+  },
+  {
+    "ParameterKey": "KeyName",
+    "ParameterValue": "ixoworld.xyz"
+  },
+  {
+    "ParameterKey": "DockerHostInstanceType",
+    "ParameterValue": "t2.medium"
+  },
+  {
+    "ParameterKey": "VolumeSize",
+    "ParameterValue": "8"
+  }
+]

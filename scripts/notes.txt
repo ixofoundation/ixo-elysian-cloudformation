@@ -1,4 +1,0 @@
-
-Connect To Your Instance
-------------------------
-ssh -i "ixoworldxyz.pem" ec2-user@ec2-18-232-35-106.compute-1.amazonaws.com
