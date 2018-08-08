@@ -1,3 +1,8 @@
-#!/bin/bash
+#!/bin/bash -xe
 
-aws cloudformation create-stack --stack-name Elysian-Proxied-Network-Stack --template-body file://templates/ElysianProxiedNetworkStack.yaml --profile trustlab.cli --region us-east-1
+STACK_SUFFIX="-$1"
+if [ "$#" -ne 1 ]; then
+    STACK_SUFFIX=""
+fi
+
+aws cloudformation create-stack --stack-name Elysian-Proxied-Network-Stack$STACK_SUFFIX --template-body file://templates/ElysianProxiedNetworkStack.yaml --profile trustlab.cli --region us-east-1
