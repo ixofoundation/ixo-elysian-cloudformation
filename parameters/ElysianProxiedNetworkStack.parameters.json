@@ -1,0 +1,26 @@
+[
+  {
+    "ParameterKey": "HostDomain",
+    "ParameterValue": "elysian.ixo.world"
+  },
+  {
+    "ParameterKey": "SubDomain",
+    "ParameterValue": "default"
+  },
+  {
+    "ParameterKey": "KeyName",
+    "ParameterValue": "ixoworld.xyz"
+  },
+  {
+    "ParameterKey": "ProxyInstanceType",
+    "ParameterValue": "t2.small"
+  },
+  {
+    "ParameterKey": "DockerHostInstanceType",
+    "ParameterValue": "t2.medium"
+  },
+  {
+    "ParameterKey": "VolumeSize",
+    "ParameterValue": "8"
+  }
+]

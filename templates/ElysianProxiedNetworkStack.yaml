@@ -1,12 +1,13 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: >-
-  AWS CloudFormation template instantiating a Network stack as well as default
-  Elysian PDS (Personal Data Store) instance. To enable the creation of additional
+  AWS CloudFormation template instantiating a Network stack as well as a NGinX Proxy fromting
+  a single default Elysian PDS (Personal Data Store) instance. To enable the creation of additional
   PDS instances the neccesary Resources are exported for Cross-Stack utilization.
   Exported resources:
-    - VPC
-    - Subnet
-    - SecurityGroup
+    - VPCId
+    - PublicSubnetId
+    - HostInstanceSecurityGroupId
+    - AvailabilityZone
     - KeyName
 Parameters:
   ProxyInstanceType:
@@ -129,6 +130,10 @@ Parameters:
       - cc2.8xlarge
       - cg1.4xlarge
     ConstraintDescription: must be a valid EC2 instance type.
+  VolumeSize:
+    Description: Size in GB for persistent volume on EBS
+    Type: Number
+    Default: 16
   KeyName:
     Description: Name of an existing EC2 KeyPair to enable SSH access to the instances
     Type: 'AWS::EC2::KeyPair::KeyName'
@@ -142,14 +147,6 @@ Parameters:
     Default: 0.0.0.0/0
     AllowedPattern: '(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})'
     ConstraintDescription: must be a valid IP CIDR range of the form x.x.x.x/x.
-  EnvironmentType:
-    Description: Type of environment. Primarily determines which ports are mapped an exposed
-    Type: 'String'
-    Default: beta
-    AllowedValues:
-      - dev
-      - beta
-      - prod
   HostDomain:
     Description: ' The domain name'
     Type: String
@@ -517,7 +514,7 @@ Resources:
                 '#    server_name  SUB_DOMAIN.HOST_DOMAIN;'
                 '#'
                 '#    location / {'
-                '#	      proxy_pass   http://PRIVATE_IP;'
+                '#	      proxy_pass   http://PRIVATE_IP:5000;'
                 '#    }'
                 '#}'
               mode: '000400'
@@ -527,28 +524,13 @@ Resources:
             adjust-nginx-root-location-proxy-pass:
               command: |
                 sed -i '1, 100 s/location \/ {/location \/ { \
-                            proxy_pass   PASS_ADDRESS;/1' nginx.conf
+                            proxy_pass   PASS_ADDRESS:5000;/' nginx.conf
               cwd: "/etc/nginx"
             set-nginx-root-location-proxy-pass-address:
               command: !Sub
                 - "sed -i 's/PASS_ADDRESS/${privateIp}/g' nginx.conf"
                 - privateIp: !Join ['', ['http', ':\/\/', !GetAtt HostInstance.PrivateIp]]
               cwd: "/etc/nginx"
-            # replace-virtual-address:
-            #   command: !Sub
-            #     - "sed -i 's/PRIVATE_IP/${privateIp}/g' default.conf"
-            #     - privateIp: !GetAtt HostInstance.PrivateIp
-            #   cwd: "/etc/nginx/conf.d"
-            # replace-virtual-host:
-            #   command: !Sub
-            #     - "sed -i 's/HOST_DOMAIN/${hostDomain}/g' default.conf"
-            #     - hostDomain: !Ref HostDomain
-            #   cwd: "/etc/nginx/conf.d"
-            # replace-virtual-subdomain:
-            #   command: !Sub
-            #     - "sed -i 's/SUB_DOMAIN/${subDomain}/g' default.conf"
-            #     - subDomain: !Ref SubDomain
-            #   cwd: "/etc/nginx/conf.d"
         StartNGiNX:
           services:
             sysvinit:
@@ -637,21 +619,21 @@ Resources:
           ToPort: '22'
           CidrIp: !Ref SSHLocation
         - IpProtocol: tcp
-          FromPort: '80'
-          ToPort: '80'
+          FromPort: '5000'
+          ToPort: '5000'
           CidrIp: 0.0.0.0/0
     Metadata:
       'AWS::CloudFormation::Designer':
         id: 7e291fcb-8470-4055-a5a7-bb2a6817b82a
   PersistentVolume:
     Type: AWS::EC2::Volume
-    DeletionPolicy: Delete
+    DeletionPolicy: Retain
     Properties:
       AvailabilityZone: !GetAtt
         - PublicSubnet
         - AvailabilityZone
       VolumeType: gp2
-      Size: 16
+      Size: !Ref VolumeSize
       Tags:
         - Key: "Name"
           Value: !Join [ '-', [ !Ref 'AWS::StackName', 'PersistentVolume' ] ]
@@ -772,11 +754,11 @@ Resources:
             create-deployment-dir:
               command: mkdir -p elysian/bin
               cwd: "/home/ec2-user"
+            extract-docker-app-container-config:
+              command: cp ixo-pds-repository/config.json elysian/
+              cwd: "/home/ec2-user"
             extract-docker-compose:
               command: cp ixo-pds-repository/docker-compose.yml elysian/
-              cwd: "/home/ec2-user"
-            extract-docker-compose-beta:
-              command: cp ixo-pds-repository/docker-compose.beta.yml elysian/
               cwd: "/home/ec2-user"
             extract-docker-compose-dev:
               command: cp ixo-pds-repository/docker-compose.dev.yml elysian/
@@ -850,51 +832,40 @@ Resources:
               command: chmod -R ugo+r+w+x db
               cwd: "/home/ec2-user/elysian"
             docker-compose-elysian:
-              command: !Sub './start.sh ${EnvironmentType}'
-              cwd: "/home/ec2-user/elysian/bin"
+              command: './bin/start.sh'
+              cwd: "/home/ec2-user/elysian"
               env:
                 HOME: "/home/ec2-user/elysian"
       'AWS::CloudFormation::Designer':
         id: 090078c2-f708-4a32-93da-435cb089eeec
 Outputs:
-  URL:
-    Value: !Join
-      - ''
-      - - 'http://'
-        - !GetAtt
-          - ProxyInstance
-          - PublicIp
-    Description: Newly created application URL
   VPCId:
-    Description: VPC ID
+    Description: VPC
     Value: !Ref VPC
     Export:
-      Name: !Sub '${AWS::StackName}-VPCID'
-  PublicSubnet:
+      Name: !Sub '${AWS::StackName}-VPC-Id'
+  PublicSubnetId:
     Description: The subnet ID to use for public web servers
     Value: !Ref PublicSubnet
     Export:
-      Name: !Sub '${AWS::StackName}-SubnetID'
-  HostInstanceSecurityGroup:
-    Description: The security group ID to use for public servers
-    Value: !GetAtt
-      - HostInstanceSecurityGroup
-      - GroupId
+      Name: !Sub '${AWS::StackName}-PublicSubnet-Id'
+  HostInstanceSecurityGroupId:
+    Description: The security group Id to use for public servers
+    Value: !Ref HostInstanceSecurityGroup
     Export:
-      Name: !Sub '${AWS::StackName}-SecurityGroupID'
+      Name: !Sub '${AWS::StackName}-HostInstanceSecurityGroup-Id'
+  AvailabilityZone:
+    Description: The availability zone to use for persistent volumes
+    Value: !GetAtt
+      - PublicSubnet
+      - AvailabilityZone
+    Export:
+      Name: !Sub '${AWS::StackName}-AvailabilityZone'
   SSHKey:
     Description: The EC2 KeyPair to enable SSH access to the instances
     Value: !Ref KeyName
     Export:
       Name: !Sub '${AWS::StackName}-SSHKey'
-  HostURL:
-    Value: !Join
-      - ''
-      - - 'http://'
-        - !GetAtt
-            - HostInstance
-            - PublicIp
-    Description: Newly created HostInstance URL
 Metadata:
   'AWS::CloudFormation::Designer':
     a895d245-b6bf-454e-b5fd-5e490bc49308:

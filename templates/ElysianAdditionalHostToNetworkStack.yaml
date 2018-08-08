@@ -1,10 +1,13 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: >-
-  AWS CloudFormation Sample Template VPC_Single_Instance_In_Subnet: Sample
-  template showing how to create a VPC and add an EC2 instance with an Elastic
-  IP address and a security group. **WARNING** This template creates an Amazon
-  EC2 instance. You will be billed for the AWS resources used if you create a
-  stack from this template.
+  AWS CloudFormation template instantiating a stack with a Elysian PDS
+  (Personal Data Store) instance. This instance is placed on the Subnet that was exported
+  when creating the Proxied Network stack.
+  Imported resources:
+      - VPC
+      - PublicSubnet
+      - HostInstanceSecurityGroup
+      - SSHKey
 Parameters:
   NetworkStackName:
     Description: >-
@@ -15,11 +18,11 @@ Parameters:
     MinLength: 1
     MaxLength: 255
     AllowedPattern: '^[a-zA-Z][-a-zA-Z0-9]*$'
-    Default: Simple-Web-Network-Stack
-  InstanceType:
-    Description: WebServer EC2 instance type
+    Default: Elysian-Proxied-Network-Stack
+  DockerHostInstanceType:
+    Description: EC2 instance type to apply when creating the DockerHost EC2 Instance
     Type: String
-    Default: t2.small
+    Default: t2.medium
     AllowedValues:
       - t1.micro
       - t2.nano
@@ -76,8 +79,12 @@ Parameters:
       - cc2.8xlarge
       - cg1.4xlarge
     ConstraintDescription: must be a valid EC2 instance type.
+  VolumeSize:
+    Description: Size in GB for persistent volume on EBS
+    Type: Number
+    Default: 16
   KeyName:
-    Description: Name of an existing EC2 KeyPair to enable SSH access to the instance
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the instances
     Type: 'AWS::EC2::KeyPair::KeyName'
     ConstraintDescription: must be the name of an existing EC2 KeyPair.
     Default: ixoworld.xyz
@@ -197,113 +204,6 @@ Mappings:
       Arch: HVM64
     cc2.8xlarge:
       Arch: HVM64
-  AWSInstanceType2NATArch:
-    t1.micro:
-      Arch: NATPV64
-    t2.nano:
-      Arch: NATHVM64
-    t2.micro:
-      Arch: NATHVM64
-    t2.small:
-      Arch: NATHVM64
-    t2.medium:
-      Arch: NATHVM64
-    t2.large:
-      Arch: NATHVM64
-    m1.small:
-      Arch: NATPV64
-    m1.medium:
-      Arch: NATPV64
-    m1.large:
-      Arch: NATPV64
-    m1.xlarge:
-      Arch: NATPV64
-    m2.xlarge:
-      Arch: NATPV64
-    m2.2xlarge:
-      Arch: NATPV64
-    m2.4xlarge:
-      Arch: NATPV64
-    m3.medium:
-      Arch: NATHVM64
-    m3.large:
-      Arch: NATHVM64
-    m3.xlarge:
-      Arch: NATHVM64
-    m3.2xlarge:
-      Arch: NATHVM64
-    m4.large:
-      Arch: NATHVM64
-    m4.xlarge:
-      Arch: NATHVM64
-    m4.2xlarge:
-      Arch: NATHVM64
-    m4.4xlarge:
-      Arch: NATHVM64
-    m4.10xlarge:
-      Arch: NATHVM64
-    c1.medium:
-      Arch: NATPV64
-    c1.xlarge:
-      Arch: NATPV64
-    c3.large:
-      Arch: NATHVM64
-    c3.xlarge:
-      Arch: NATHVM64
-    c3.2xlarge:
-      Arch: NATHVM64
-    c3.4xlarge:
-      Arch: NATHVM64
-    c3.8xlarge:
-      Arch: NATHVM64
-    c4.large:
-      Arch: NATHVM64
-    c4.xlarge:
-      Arch: NATHVM64
-    c4.2xlarge:
-      Arch: NATHVM64
-    c4.4xlarge:
-      Arch: NATHVM64
-    c4.8xlarge:
-      Arch: NATHVM64
-    g2.2xlarge:
-      Arch: NATHVMG2
-    g2.8xlarge:
-      Arch: NATHVMG2
-    r3.large:
-      Arch: NATHVM64
-    r3.xlarge:
-      Arch: NATHVM64
-    r3.2xlarge:
-      Arch: NATHVM64
-    r3.4xlarge:
-      Arch: NATHVM64
-    r3.8xlarge:
-      Arch: NATHVM64
-    i2.xlarge:
-      Arch: NATHVM64
-    i2.2xlarge:
-      Arch: NATHVM64
-    i2.4xlarge:
-      Arch: NATHVM64
-    i2.8xlarge:
-      Arch: NATHVM64
-    d2.xlarge:
-      Arch: NATHVM64
-    d2.2xlarge:
-      Arch: NATHVM64
-    d2.4xlarge:
-      Arch: NATHVM64
-    d2.8xlarge:
-      Arch: NATHVM64
-    hi1.4xlarge:
-      Arch: NATHVM64
-    hs1.8xlarge:
-      Arch: NATHVM64
-    cr1.8xlarge:
-      Arch: NATHVM64
-    cc2.8xlarge:
-      Arch: NATHVM64
   AWSRegionArch2AMI:
     us-east-1:
       PV64: ami-2a69aa47
@@ -378,34 +278,44 @@ Mappings:
       HVM64: ami-3e60745c
       HVMG2: NOT_SUPPORTED
 Resources:
+  PersistentVolume:
+    Type: AWS::EC2::Volume
+    DeletionPolicy: Retain
+    Properties:
+      AvailabilityZone: !ImportValue
+        'Fn::Sub': '${NetworkStackName}-AvailabilityZone'
+      VolumeType: gp2
+      Size: !Ref VolumeSize
+      Tags:
+        - Key: "Name"
+          Value: !Join [ '-', [ !Ref 'AWS::StackName', 'PersistentVolume' ] ]
+        - Key: "Stack"
+          Value: !Ref 'AWS::StackName'
   HostInstance:
     Type: 'AWS::EC2::Instance'
     Properties:
+      InstanceType: !Ref DockerHostInstanceType
       ImageId: !FindInMap
         - AWSRegionArch2AMI
         - !Ref 'AWS::Region'
         - !FindInMap
           - AWSInstanceType2Arch
-          - !Ref InstanceType
+          - !Ref DockerHostInstanceType
           - Arch
-      InstanceType: !Ref InstanceType
       KeyName: !Ref KeyName
-      Tags:
-        - Key: Name
-          Value: Elysian/PDS Host Instance
-        - Key: Stack
-          Value: !Ref 'AWS::StackName'
-        - Key: Application
-          Value: !Ref 'AWS::StackId'
+      Monitoring: true
       NetworkInterfaces:
         - GroupSet:
             - !ImportValue
-              'Fn::Sub': '${NetworkStackName}-SecurityGroupID'
+              'Fn::Sub': '${NetworkStackName}-HostInstanceSecurityGroup-Id'
           AssociatePublicIpAddress: 'true'
           DeviceIndex: '0'
-          DeleteOnTermination: true
-          SubnetId: !ImportValue
-            'Fn::Sub': '${NetworkStackName}-SubnetID'
+          DeleteOnTermination: 'true'
+          SubnetId:  !ImportValue
+            'Fn::Sub': '${NetworkStackName}-PublicSubnet-Id'
+      Volumes:
+        - VolumeId: !Ref PersistentVolume
+          Device: /dev/sdf
       UserData: !Base64
         'Fn::Join':
           - ''
@@ -417,6 +327,22 @@ Resources:
             - '         --stack '
             - !Ref 'AWS::StackName'
             - '         --resource HostInstance '
+            - '         --configsets Prepare '
+            - '         --region '
+            - !Ref 'AWS::Region'
+            - |+
+
+            - /tmp/wait-for-volume-and-format-filesystem.sh
+            - |+
+
+            - rm /tmp/wait-for-volume-and-format-filesystem.sh
+            - |+
+
+            - '/opt/aws/bin/cfn-init -v '
+            - '         --stack '
+            - !Ref 'AWS::StackName'
+            - '         --resource HostInstance '
+            - '         --configsets Deploy '
             - '         --region '
             - !Ref 'AWS::Region'
             - |+
@@ -428,86 +354,143 @@ Resources:
             - '         --region '
             - !Ref 'AWS::Region'
             - ''
-    # CreationPolicy:
-    #   ResourceSignal:
-    #     Timeout: PT10M
-
+      Tags:
+        - Key: Name
+          Value: Elysian/PDS Additional Host Instance
+        - Key: Stack
+          Value: !Ref 'AWS::StackName'
+        - Key: Application
+          Value: !Ref 'AWS::StackId'
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: PT15M
     Metadata:
-      Comment: Install NGiNX
+      Comment: Prepare Elysian PDS
       'AWS::CloudFormation::Init':
-        config:
+        configSets:
+          Prepare:
+            - PrepareDocker
+            - PrepareElysian
+            - PreparePersistentFilesystemLinkingScript
+          Deploy:
+            - DeployElysian
+        PrepareDocker:
           packages:
             yum:
-              nginx: []
-          files:
-            /etc/cfn/cfn-hup.conf:
-              content: !Join
-                - ''
-                - - |
-                    [main]
-                  - stack=
-                  - !Ref 'AWS::StackId'
-                  - |+
-
-                  - region=
-                  - !Ref 'AWS::Region'
-                  - |+
-
-              mode: '000400'
-              owner: root
-              group: root
-            /etc/cfn/hooks.d/cfn-auto-reloader.conf:
-              content: !Join
-                - ''
-                - - |
-                    [cfn-auto-reloader-hook]
-                  - |
-                    triggers=post.update
-                  - >
-                    path=Resources.HostInstance.Metadata.AWS::CloudFormation::Init
-                  - 'action=/opt/aws/bin/cfn-init -v '
-                  - '         --stack '
-                  - !Ref 'AWS::StackName'
-                  - '         --resource HostInstance '
-                  - '         --region '
-                  - !Ref 'AWS::Region'
-                  - |+
-
-                  - |
-                    runas=root
-              mode: '000400'
-              owner: root
-              group: root
+              docker: []
+          users:
+            "ec2-user":
+              groups:
+                - "docker"
+          commands:
+            docker-compose-get:
+              command: "sudo curl -L https://github.com/docker/compose/releases/download/1.22.0/docker-compose-$(uname -s)-$(uname -m) -o docker-compose"
+              cwd: "/usr/local/bin/"
+            docker-compose-permissions:
+              command: "sudo chmod +x docker-compose"
+              cwd: "/usr/local/bin/"
+            docker-compose-root:
+              command: "ln -s /usr/local/bin/docker-compose docker-compose"
+              cwd: "/bin"
+            docker-compose-version:
+              command: "docker-compose --version"
+              cwd: "/home/ec2-user"
           services:
             sysvinit:
-              nginx:
+              docker:
                 enabled: 'true'
                 ensureRunning: 'true'
-              cfn-hup:
-                enabled: 'true'
-                ensureRunning: 'true'
-                files:
-                  - /etc/cfn/cfn-hup.conf
-                  - /etc/cfn/hooks.d/cfn-auto-reloader.conf
+        PrepareElysian:
+          sources:
+            "/home/ec2-user/ixo-pds-repository": "https://github.com/ixofoundation/ixo-pds/tarball/master"
+          commands:
+            create-deployment-dir:
+              command: mkdir -p elysian/bin
+              cwd: "/home/ec2-user"
+            extract-docker-app-container-config:
+              command: cp ixo-pds-repository/config.json elysian/
+              cwd: "/home/ec2-user"
+            extract-docker-compose:
+              command: cp ixo-pds-repository/docker-compose.yml elysian/
+              cwd: "/home/ec2-user"
+            extract-docker-compose-dev:
+              command: cp ixo-pds-repository/docker-compose.dev.yml elysian/
+              cwd: "/home/ec2-user"
+            extract-docker-compose-prod:
+              command: cp ixo-pds-repository/docker-compose.prod.yml elysian/
+              cwd: "/home/ec2-user"
+            extract-elysian-scripts:
+              command: cp ixo-pds-repository/bin/* elysian/bin
+              cwd: "/home/ec2-user"
+            remove-build-in-docker-compose:
+              command: sed -i 's/build/# build/g' docker-compose.yml
+              cwd: "/home/ec2-user/elysian"
+            remove-repository:
+              command: rm -rf ixo-pds-repository
+              cwd: "/home/ec2-user"
+        PreparePersistentFilesystemLinkingScript:
+          files:
+            "/tmp/wait-for-volume-and-format-filesystem.sh":
+              content: !Sub |
+                #!/bin/bash -xe
+                #
+                # See: http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-using-volumes.html
+                #
+                # Make sure volume has been created AND attached to this instance !
+                #
+                # We do not need a loop counter in the "until" statements below because
+                # there is a 5 minute limit on the CreationPolicy for this EC2 instance already.
+
+
+                ######################################################################
+                # Volume /dev/sdf (which will get created as /dev/xvdf on Amazon Linux)
+
+                while [ ! -e /dev/sdf ];
+                do
+                  echo waiting for /dev/sdf to attach
+                  sleep 5
+                done
+
+                # Format /dev/xvdf if it does not contain a partition yet
+                if [ "$(file -b -s /dev/xvdf)" == "data" ]; then
+                  mkfs -t ext4 /dev/xvdf
+                fi
+
+                mkdir -p /persistent-volume
+                mount /dev/xvdf /persistent-volume
+
+                mkdir /persistent-volume/backup
+                mkdir /persistent-volume/db
+                chmod -R ugo+r+w+x persistent-volume
+
+                # Persist the volume in /etc/fstab so it gets mounted again
+                echo '/dev/xvdf /persistent-volume ext4 defaults,nofail 0 2' >> /etc/fstab
+
+                lsblk
+              mode: '000777'
+              owner: root
+              group: root
+        DeployElysian:
+          commands:
+            create-symlink-backup-volume:
+              command: ln -s /persistent-volume/backup backup
+              cwd: "/home/ec2-user/elysian"
+            create-symlink-backup-volume-permissions:
+              command: chmod -R ugo+r+w+x backup
+              cwd: "/home/ec2-user/elysian"
+            create-symlink-db-volume:
+              command: ln -s /persistent-volume/db db
+              cwd: "/home/ec2-user/elysian"
+            create-symlink-db-volume-permissions:
+              command: chmod -R ugo+r+w+x db
+              cwd: "/home/ec2-user/elysian"
+            docker-compose-elysian:
+              command: !Sub './bin/start.sh'
+              cwd: "/home/ec2-user/elysian"
+              env:
+                HOME: "/home/ec2-user/elysian"
       'AWS::CloudFormation::Designer':
         id: 090078c2-f708-4a32-93da-435cb089eeec
-Outputs:
-  HostURL:
-    Value: !Join
-      - ''
-      - - 'http://'
-        - !GetAtt
-            - HostInstance
-            - PublicIp
-    Description: Newly created HostInstance URL
-
-  PrivateIp:
-    Value:
-      !GetAtt
-      - HostInstance
-      - PrivateIp
-    Description: IP for Newly created instance
-
 Metadata:
   'AWS::CloudFormation::Designer':
     a895d245-b6bf-454e-b5fd-5e490bc49308:
