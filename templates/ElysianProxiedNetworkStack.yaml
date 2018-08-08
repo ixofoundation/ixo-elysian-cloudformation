@@ -142,14 +142,6 @@ Parameters:
     Default: 0.0.0.0/0
     AllowedPattern: '(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})'
     ConstraintDescription: must be a valid IP CIDR range of the form x.x.x.x/x.
-  EnvironmentType:
-    Description: Type of environment. Primarily determines which ports are mapped an exposed
-    Type: 'String'
-    Default: beta
-    AllowedValues:
-      - dev
-      - beta
-      - prod
   HostDomain:
     Description: ' The domain name'
     Type: String
@@ -517,7 +509,7 @@ Resources:
                 '#    server_name  SUB_DOMAIN.HOST_DOMAIN;'
                 '#'
                 '#    location / {'
-                '#	      proxy_pass   http://PRIVATE_IP;'
+                '#	      proxy_pass   http://PRIVATE_IP:5000;'
                 '#    }'
                 '#}'
               mode: '000400'
@@ -527,7 +519,7 @@ Resources:
             adjust-nginx-root-location-proxy-pass:
               command: |
                 sed -i '1, 100 s/location \/ {/location \/ { \
-                            proxy_pass   PASS_ADDRESS;/1' nginx.conf
+                            proxy_pass   PASS_ADDRESS:5000;/' nginx.conf
               cwd: "/etc/nginx"
             set-nginx-root-location-proxy-pass-address:
               command: !Sub
@@ -850,21 +842,13 @@ Resources:
               command: chmod -R ugo+r+w+x db
               cwd: "/home/ec2-user/elysian"
             docker-compose-elysian:
-              command: !Sub './start.sh ${EnvironmentType}'
-              cwd: "/home/ec2-user/elysian/bin"
+              command: './bin/start.sh'
+              cwd: "/home/ec2-user/elysian"
               env:
                 HOME: "/home/ec2-user/elysian"
       'AWS::CloudFormation::Designer':
         id: 090078c2-f708-4a32-93da-435cb089eeec
 Outputs:
-  URL:
-    Value: !Join
-      - ''
-      - - 'http://'
-        - !GetAtt
-          - ProxyInstance
-          - PublicIp
-    Description: Newly created application URL
   VPCId:
     Description: VPC ID
     Value: !Ref VPC
@@ -887,14 +871,6 @@ Outputs:
     Value: !Ref KeyName
     Export:
       Name: !Sub '${AWS::StackName}-SSHKey'
-  HostURL:
-    Value: !Join
-      - ''
-      - - 'http://'
-        - !GetAtt
-            - HostInstance
-            - PublicIp
-    Description: Newly created HostInstance URL
 Metadata:
   'AWS::CloudFormation::Designer':
     a895d245-b6bf-454e-b5fd-5e490bc49308:
