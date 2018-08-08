@@ -511,37 +511,44 @@ Resources:
             yum:
               nginx: [1.12.1]
           files:
-            /etc/nginx/conf.d/default.conf:
+            /etc/nginx/conf.d/default.conf.eg:
               content: !Sub |
-                server {
-                    server_name  SUB_DOMAIN.HOST_DOMAIN;
-
-                    location / {
-                	      proxy_pass   http://PRIVATE_IP;
-                    }
-                }
+                '#server {'
+                '#    server_name  SUB_DOMAIN.HOST_DOMAIN;'
+                '#'
+                '#    location / {'
+                '#	      proxy_pass   http://PRIVATE_IP;'
+                '#    }'
+                '#}'
               mode: '000400'
               owner: root
               group: root
           commands:
-            replace-nginx-root-location:
-              command: sed -i "s/location \/ {/location \/neverland {/" nginx.conf
+            adjust-nginx-root-location-proxy-pass:
+              command: |
+                sed -i '1, 100 s/location \/ {/location \/ { \
+                            proxy_pass   PASS_ADDRESS;/1' nginx.conf
               cwd: "/etc/nginx"
-            replace-virtual-address:
+            set-nginx-root-location-proxy-pass-address:
               command: !Sub
-                - "sed -i 's/PRIVATE_IP/${privateIp}/g' default.conf"
-                - privateIp: !GetAtt HostInstance.PrivateIp
-              cwd: "/etc/nginx/conf.d"
-            replace-virtual-host:
-              command: !Sub
-                - "sed -i 's/HOST_DOMAIN/${hostDomain}/g' default.conf"
-                - hostDomain: !Ref HostDomain
-              cwd: "/etc/nginx/conf.d"
-            replace-sub:
-              command: !Sub
-                - "sed -i 's/SUB_DOMAIN/${subDomain}/g' default.conf"
-                - subDomain: !Ref SubDomain
-              cwd: "/etc/nginx/conf.d"
+                - "sed -i 's/PASS_ADDRESS/${privateIp}/g' nginx.conf"
+                - privateIp: !Join ['', ['http', ':\/\/', !GetAtt HostInstance.PrivateIp]]
+              cwd: "/etc/nginx"
+            # replace-virtual-address:
+            #   command: !Sub
+            #     - "sed -i 's/PRIVATE_IP/${privateIp}/g' default.conf"
+            #     - privateIp: !GetAtt HostInstance.PrivateIp
+            #   cwd: "/etc/nginx/conf.d"
+            # replace-virtual-host:
+            #   command: !Sub
+            #     - "sed -i 's/HOST_DOMAIN/${hostDomain}/g' default.conf"
+            #     - hostDomain: !Ref HostDomain
+            #   cwd: "/etc/nginx/conf.d"
+            # replace-virtual-subdomain:
+            #   command: !Sub
+            #     - "sed -i 's/SUB_DOMAIN/${subDomain}/g' default.conf"
+            #     - subDomain: !Ref SubDomain
+            #   cwd: "/etc/nginx/conf.d"
         StartNGiNX:
           services:
             sysvinit:
