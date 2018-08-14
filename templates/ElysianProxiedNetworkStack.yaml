@@ -421,6 +421,75 @@ Resources:
     Metadata:
       'AWS::CloudFormation::Designer':
         id: ed7176bb-1475-4c51-89e8-d8959196563a
+  CloudflareProtectedInstancesSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      VpcId: !Ref VPC
+      GroupDescription: Enable HTTP traffic on port 80 only from Cloudflare IPs & SSH access via port 22
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: !Ref SSHLocation
+        - IpProtocol: tcp
+          FromPort: '80'
+          ToPort: '80'
+          CidrIp: 103.21.244.0/22
+        - IpProtocol: tcp
+          FromPort: '80'
+          ToPort: '80'
+          CidrIp: 103.22.200.0/22
+        - IpProtocol: tcp
+          FromPort: '80'
+          ToPort: '80'
+          CidrIp: 103.31.4.0/22
+        - IpProtocol: tcp
+          FromPort: '80'
+          ToPort: '80'
+          CidrIp: 104.16.0.0/12
+        - IpProtocol: tcp
+          FromPort: '80'
+          ToPort: '80'
+          CidrIp: 108.162.192.0/18
+        - IpProtocol: tcp
+          FromPort: '80'
+          ToPort: '80'
+          CidrIp: 131.0.72.0/22
+        - IpProtocol: tcp
+          FromPort: '80'
+          ToPort: '80'
+          CidrIp: 141.101.64.0/18
+        - IpProtocol: tcp
+          FromPort: '80'
+          ToPort: '80'
+          CidrIp: 162.158.0.0/15
+        - IpProtocol: tcp
+          FromPort: '80'
+          ToPort: '80'
+          CidrIp: 172.64.0.0/13
+        - IpProtocol: tcp
+          FromPort: '80'
+          ToPort: '80'
+          CidrIp: 173.245.48.0/20
+        - IpProtocol: tcp
+          FromPort: '80'
+          ToPort: '80'
+          CidrIp: 188.114.96.0/20
+        - IpProtocol: tcp
+          FromPort: '80'
+          ToPort: '80'
+          CidrIp: 190.93.240.0/20
+        - IpProtocol: tcp
+          FromPort: '80'
+          ToPort: '80'
+          CidrIp: 197.234.240.0/22
+        - IpProtocol: tcp
+          FromPort: '80'
+          ToPort: '80'
+          CidrIp: 198.41.128.0/17
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: fbd52d3e-087e-46f8-b55b-c22f6d4b0c79
   ProxyInstanceSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
@@ -558,7 +627,7 @@ Resources:
           Value: !Ref 'AWS::StackId'
       NetworkInterfaces:
         - GroupSet:
-            - !Ref ProxyInstanceSecurityGroup
+            - !Ref CloudflareProtectedInstancesSecurityGroup
           AssociatePublicIpAddress: 'true'
           DeviceIndex: '0'
           DeleteOnTermination: 'true'
@@ -621,7 +690,7 @@ Resources:
         - IpProtocol: tcp
           FromPort: '5000'
           ToPort: '5000'
-          CidrIp: 0.0.0.0/0
+          CidrIp: !GetAtt VPC.CidrBlock
     Metadata:
       'AWS::CloudFormation::Designer':
         id: 7e291fcb-8470-4055-a5a7-bb2a6817b82a
