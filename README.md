@@ -29,6 +29,7 @@ The resulting stack:
 ![][ElysianProxiedNetworkStack-diagram-S3-url]
 
 Note: If additional Elysian Personal Data Store instances are desired use the <B>ElysianAdditionalHostToNetworkStack.yaml</B> CFN template.
+
 NB: Attempting to use this template without first creating a stack by means of the <B>ElysianProxiedNetworkStack.yaml</B> CFN template and referencing it by means of the NetworkStackName parameter will result in FAILURE.
 
 | Region            | HVM AMIs                                                                                 |
