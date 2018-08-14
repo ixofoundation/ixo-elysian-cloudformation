@@ -26,7 +26,7 @@ This can be accomplished using the <B>ElysianProxiedNetworkStack.yaml</B> CFN te
 | `us-east-1`       | [![ixo Elysian Stack launch][stack-badge]][us-east-1-CREATE-ElysianProxiedNetworkStack-with-S3-url]      |
 
 The resulting stack:
-
+![][ElysianProxiedNetworkStack-diagram-S3-url]
 
 Note: If additional Elysian Personal Data Store instances are desired use the <B>ElysianAdditionalHostToNetworkStack.yaml</B> CFN template.
 NB: Attempting to use this template without first creating a stack by means of the <B>ElysianProxiedNetworkStack.yaml</B> CFN template and referencing it by means of the NetworkStackName parameter will result in FAILURE.
@@ -42,6 +42,8 @@ Alternatively the AWS cli can be used to create stacks with the provided templat
 [ixo-logo]: https://ixo.foundation/wp-content/uploads/2018/01/ixo-Cyan@2x.png
 
 [website-url]: https://ixo.foundation
+
+[ElysianProxiedNetworkStack-diagram-S3-url]: https://s3.amazonaws.com/ixo-elysian-cfn-templates/ElysianProxiedNetworkStack-diagram.png
 
 [us-east-1-CREATE-ElysianProxiedNetworkStack-with-S3-url]: https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=Elysian-Proxied-Network-Stack$&templateURL=https://s3.amazonaws.com/ixo-elysian-cfn-templates/ElysianProxiedNetworkStack.yaml
 
