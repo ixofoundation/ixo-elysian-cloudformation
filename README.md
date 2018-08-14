@@ -35,12 +35,17 @@ NB: Attempting to use this template without first creating a stack by means of t
 | ----------------: | ---------------------------------------------------------------------------------------- |
 | `us-east-1`       | [![Elysian-Dockerhost-Instance Stack launch][stack-badge]][us-east-1-CREATE-ElysianAdditionalHostToNetworkStack-WITH-S3-url]      |
 
-###  [AWS CLI](https://aws.amazon.com/cli)
-
 The resulting stack (will re-use infrastructure from previously created stack):
 ![][ElysianAdditionalHostToNetworkStack-diagram-S3-url]
 
+
+###  [AWS CLI](https://aws.amazon.com/cli)
+
 Alternatively the AWS cli can be used to create stacks with the provided templates. For insight into how this can be accomplished refer to the contents of the scripts directory.
+
+```bash
+aws cloudformation create-stack --stack-name Elysian-Proxied-Network-Stack --template-body file://templates/ElysianProxiedNetworkStack.yaml  --parameters file://parameters/ElysianProxiedNetworkStack.parameters.json --profile your.previously-configured-cli-profile --region us-east-1
+```
 
 [ixo-logo]: https://ixo.foundation/wp-content/uploads/2018/01/ixo-Cyan@2x.png
 
