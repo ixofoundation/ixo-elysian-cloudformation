@@ -44,7 +44,13 @@ The resulting stack (will re-use infrastructure from previously created stack):
 Alternatively the AWS cli can be used to create stacks with the provided templates. For insight into how this can be accomplished refer to the contents of the scripts directory.
 
 ```bash
-aws cloudformation create-stack --stack-name Elysian-Proxied-Network-Stack --template-body file://templates/ElysianProxiedNetworkStack.yaml  --parameters file://parameters/ElysianProxiedNetworkStack.parameters.json --profile your.previously-configured-cli-profile --region us-east-1
+$ aws cloudformation create-stack --stack-name Elysian-Proxied-Network-Stack --template-body file://templates/ElysianProxiedNetworkStack.yaml  --parameters file://parameters/ElysianProxiedNetworkStack.parameters.json --profile your.previously.configured.cli.profile --region us-east-1
+```
+
+and
+
+```bash
+$ aws cloudformation create-stack --stack-name Elysian-Additional-Host-To-Network-Stack --template-body file://templates/ElysianAdditionalHostToNetworkStack.yaml  --parameters file://parameters/ElysianAdditionalHostToNetworkStack.parameters.json --profile your.previously.configured.cli.profile --region us-east-1
 ```
 
 [ixo-logo]: https://ixo.foundation/wp-content/uploads/2018/01/ixo-Cyan@2x.png
