@@ -37,6 +37,9 @@ NB: Attempting to use this template without first creating a stack by means of t
 
 ###  [AWS CLI](https://aws.amazon.com/cli)
 
+The resulting stack (will re-use infrastructure from previously created stack):
+![][ElysianAdditionalHostToNetworkStack-diagram-S3-url]
+
 Alternatively the AWS cli can be used to create stacks with the provided templates. For insight into how this can be accomplished refer to the contents of the scripts directory.
 
 [ixo-logo]: https://ixo.foundation/wp-content/uploads/2018/01/ixo-Cyan@2x.png
@@ -45,7 +48,9 @@ Alternatively the AWS cli can be used to create stacks with the provided templat
 
 [ElysianProxiedNetworkStack-diagram-S3-url]: https://s3.amazonaws.com/ixo-elysian-cfn-templates/ElysianProxiedNetworkStack-diagram.png
 
-[us-east-1-CREATE-ElysianProxiedNetworkStack-with-S3-url]: https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=Elysian-Proxied-Network-Stack$&templateURL=https://s3.amazonaws.com/ixo-elysian-cfn-templates/ElysianProxiedNetworkStack.yaml
+[us-east-1-CREATE-ElysianProxiedNetworkStack-with-S3-url]: https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=Elysian-Proxied-Network-Stack&templateURL=https://s3.amazonaws.com/ixo-elysian-cfn-templates/ElysianProxiedNetworkStack.yaml
+
+[ElysianAdditionalHostToNetworkStack-diagram-S3-url]: https://s3.amazonaws.com/ixo-elysian-cfn-templates/Additional-Host-To-Network-Stack-diagram.png
 
 [us-east-1-CREATE-ElysianAdditionalHostToNetworkStack-WITH-S3-url]: https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=Elysian-Additional-Host-To-Network-Stack&templateURL=https://s3.amazonaws.com/ixo-elysian-cfn-templates/ElysianAdditionalHostToNetworkStack.yaml
 
