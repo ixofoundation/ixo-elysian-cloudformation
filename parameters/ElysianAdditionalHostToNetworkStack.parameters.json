@@ -1,5 +1,9 @@
 [
   {
+    "ParameterKey": "TargetEnvironment",
+    "ParameterValue": "uat"
+  },
+  {
     "ParameterKey": "NetworkStackName",
     "ParameterValue": "Elysian-Proxied-Network-Stack-CLOSED-BETA"
   },

@@ -1,7 +1,11 @@
 [
   {
+    "ParameterKey": "TargetEnvironment",
+    "ParameterValue": "uat"
+  },
+  {
     "ParameterKey": "HostDomain",
-    "ParameterValue": "elysian.ixo.world"
+    "ParameterValue": "elysian_uat.ixo.world"
   },
   {
     "ParameterKey": "SubDomain",

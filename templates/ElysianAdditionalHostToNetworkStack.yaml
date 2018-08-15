@@ -9,6 +9,14 @@ Description: >-
       - HostInstanceSecurityGroup
       - SSHKey
 Parameters:
+  TargetEnvironment:
+    Description: Purpose of environment the stack will represent
+    Type: String
+    Default: prod
+    AllowedValues:
+      - prod
+      - uat
+      - dev
   NetworkStackName:
     Description: >-
       Name of an active CloudFormation stack that contains the networking
@@ -413,11 +421,11 @@ Resources:
             extract-docker-compose:
               command: cp ixo-pds-repository/docker-compose.yml elysian/
               cwd: "/home/ec2-user"
-            extract-docker-compose-dev:
-              command: cp ixo-pds-repository/docker-compose.dev.yml elysian/
-              cwd: "/home/ec2-user"
             extract-docker-compose-prod:
               command: cp ixo-pds-repository/docker-compose.prod.yml elysian/
+              cwd: "/home/ec2-user"
+            extract-docker-compose-uat:
+              command: cp ixo-pds-repository/docker-compose.uat.yml elysian/
               cwd: "/home/ec2-user"
             extract-elysian-scripts:
               command: cp ixo-pds-repository/bin/* elysian/bin
@@ -485,7 +493,7 @@ Resources:
               command: chmod -R ugo+r+w+x db
               cwd: "/home/ec2-user/elysian"
             docker-compose-elysian:
-              command: !Sub './bin/start.sh'
+              command: !Join [ " ", [ './bin/start.sh', !Ref TargetEnvironment ] ]
               cwd: "/home/ec2-user/elysian"
               env:
                 HOME: "/home/ec2-user/elysian"
