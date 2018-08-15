@@ -5,7 +5,7 @@
   },
   {
     "ParameterKey": "NetworkStackName",
-    "ParameterValue": "Elysian-Proxied-Network-Stack-CLOSED-BETA"
+    "ParameterValue": "Elysian-Proxied-Network-Stack-UAT"
   },
   {
     "ParameterKey": "KeyName",
