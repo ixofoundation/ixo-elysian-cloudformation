@@ -5,7 +5,7 @@
   },
   {
     "ParameterKey": "NetworkStackName",
-    "ParameterValue": "Elysian-Proxied-Network-Stack-UAT"
+    "ParameterValue": "Elysian-ELB-Proxy-Network-Stack-UAT"
   },
   {
     "ParameterKey": "KeyName",

@@ -142,6 +142,10 @@ Parameters:
     Description: Size in GB for persistent volume on EBS
     Type: Number
     Default: 16
+  CertARN:
+    Description: Name of an existing Certificate to terminate on the LoadBalancer
+    Type: String
+    ConstraintDescription: must be the name of an existing Certificate with ARN.
   KeyName:
     Description: Name of an existing EC2 KeyPair to enable SSH access to the instances
     Type: 'AWS::EC2::KeyPair::KeyName'
@@ -429,75 +433,33 @@ Resources:
     Metadata:
       'AWS::CloudFormation::Designer':
         id: ed7176bb-1475-4c51-89e8-d8959196563a
-  CloudflareProtectedInstancesSecurityGroup:
-    Type: 'AWS::EC2::SecurityGroup'
+  ElasticLoadBalancer:
+    Type: AWS::ElasticLoadBalancing::LoadBalancer
     Properties:
-      VpcId: !Ref VPC
-      GroupDescription: Enable HTTP traffic on port 80 only from Cloudflare IPs & SSH access via port 22
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: '22'
-          ToPort: '22'
-          CidrIp: !Ref SSHLocation
-        - IpProtocol: tcp
-          FromPort: '80'
-          ToPort: '80'
-          CidrIp: 103.21.244.0/22
-        - IpProtocol: tcp
-          FromPort: '80'
-          ToPort: '80'
-          CidrIp: 103.22.200.0/22
-        - IpProtocol: tcp
-          FromPort: '80'
-          ToPort: '80'
-          CidrIp: 103.31.4.0/22
-        - IpProtocol: tcp
-          FromPort: '80'
-          ToPort: '80'
-          CidrIp: 104.16.0.0/12
-        - IpProtocol: tcp
-          FromPort: '80'
-          ToPort: '80'
-          CidrIp: 108.162.192.0/18
-        - IpProtocol: tcp
-          FromPort: '80'
-          ToPort: '80'
-          CidrIp: 131.0.72.0/22
-        - IpProtocol: tcp
-          FromPort: '80'
-          ToPort: '80'
-          CidrIp: 141.101.64.0/18
-        - IpProtocol: tcp
-          FromPort: '80'
-          ToPort: '80'
-          CidrIp: 162.158.0.0/15
-        - IpProtocol: tcp
-          FromPort: '80'
-          ToPort: '80'
-          CidrIp: 172.64.0.0/13
-        - IpProtocol: tcp
-          FromPort: '80'
-          ToPort: '80'
-          CidrIp: 173.245.48.0/20
-        - IpProtocol: tcp
-          FromPort: '80'
-          ToPort: '80'
-          CidrIp: 188.114.96.0/20
-        - IpProtocol: tcp
-          FromPort: '80'
-          ToPort: '80'
-          CidrIp: 190.93.240.0/20
-        - IpProtocol: tcp
-          FromPort: '80'
-          ToPort: '80'
-          CidrIp: 197.234.240.0/22
-        - IpProtocol: tcp
-          FromPort: '80'
-          ToPort: '80'
-          CidrIp: 198.41.128.0/17
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: fbd52d3e-087e-46f8-b55b-c22f6d4b0c79
+      SecurityGroups:
+      - !Ref ProxyInstanceSecurityGroup
+      Scheme: internet-facing
+      Subnets:
+      - !Ref PublicSubnet
+      Instances:
+      - !Ref ProxyInstance
+      Listeners:
+      - LoadBalancerPort: '443'
+        InstancePort: '80'
+        Protocol: HTTPS
+        SSLCertificateId:
+          Ref: CertARN
+        PolicyNames:
+        - ELBSecurityPolicy-2016-08
+      HealthCheck:
+        Target: HTTP:80/
+        HealthyThreshold: '3'
+        UnhealthyThreshold: '5'
+        Interval: '30'
+        Timeout: '5'
+      ConnectionDrainingPolicy:
+        Enabled: 'true'
+        Timeout: '60'
   ProxyInstanceSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
@@ -603,6 +565,11 @@ Resources:
                 sed -i '1, 100 s/location \/ {/location \/ { \
                             proxy_pass   PASS_ADDRESS:5000;/' nginx.conf
               cwd: "/etc/nginx"
+            insert-nginx-max-file-upload-size:
+              command: |
+                sed -i '1, 100 s/http {/http { \
+                client_max_body_size 0;/' nginx.conf
+              cwd: "/etc/nginx"
             set-nginx-root-location-proxy-pass-address:
               command: !Sub
                 - "sed -i 's/PASS_ADDRESS/${privateIp}/g' nginx.conf"
@@ -635,7 +602,7 @@ Resources:
           Value: !Ref 'AWS::StackId'
       NetworkInterfaces:
         - GroupSet:
-            - !Ref CloudflareProtectedInstancesSecurityGroup
+            - !Ref ProxyInstanceSecurityGroup
           AssociatePublicIpAddress: 'true'
           DeviceIndex: '0'
           DeleteOnTermination: 'true'
@@ -676,15 +643,6 @@ Resources:
     CreationPolicy:
       ResourceSignal:
         Timeout: PT5M
-  ProxyIPAddress:
-    Type: 'AWS::EC2::EIP'
-    DependsOn: AttachGateway
-    Properties:
-      Domain: vpc
-      InstanceId: !Ref ProxyInstance
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: b0d68bfc-1338-48b0-ac38-247fd9f34309
   HostInstanceSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
