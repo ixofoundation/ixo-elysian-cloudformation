@@ -565,9 +565,14 @@ Resources:
                 sed -i '1, 100 s/location \/ {/location \/ { \
                             proxy_pass   PASS_ADDRESS:5000;/' nginx.conf
               cwd: "/etc/nginx"
+            insert-nginx-cache-expire-immediately:
+              command: |
+                sed -i '1, 50 s/server {/server { \
+                expires -1;/' nginx.conf
+              cwd: "/etc/nginx"
             insert-nginx-max-file-upload-size:
               command: |
-                sed -i '1, 100 s/http {/http { \
+                sed -i '1, 50 s/http {/http { \
                 client_max_body_size 0;/' nginx.conf
               cwd: "/etc/nginx"
             set-nginx-root-location-proxy-pass-address:
