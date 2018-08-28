@@ -13,7 +13,7 @@
   },
   {
       "ParameterKey": "CertARN",
-      "ParameterValue": "arn:aws:acm:us-east-1:693537422632:certificate/08510547-6938-476d-af62-015b4a23bd33"
+      "ParameterValue": "%%CertARN%%"
   },
   {
     "ParameterKey": "KeyName",
