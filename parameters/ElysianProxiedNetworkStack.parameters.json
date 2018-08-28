@@ -1,7 +1,7 @@
 [
   {
     "ParameterKey": "TargetEnvironment",
-    "ParameterValue": "prod"
+    "ParameterValue": "%%TargetEnvironment%%"
   },
   {
     "ParameterKey": "HostDomain",
