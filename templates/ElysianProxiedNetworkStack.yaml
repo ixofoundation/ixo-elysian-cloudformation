@@ -17,7 +17,7 @@ Parameters:
     AllowedValues:
       - prod
       - uat
-      - dev
+      - qa
   ProxyInstanceType:
     Description: EC2 instance type to apply when creating the Proxy  EC2 Instance
     Type: String
@@ -173,6 +173,10 @@ Parameters:
     MaxLength: '53'
     Default: 'default'
     ConstraintDescription: must be a valid subdomain
+Conditions:
+  IsProdTargetEnvironent: !Equals [ !Ref TargetEnvironment, prod ]
+  IsUatTargetEnvironent: !Equals [ !Ref TargetEnvironment, uat ]
+  IsQATargetEnvironent: !Equals [ !Ref TargetEnvironment, qa ]
 Mappings:
   AWSInstanceType2Arch:
     t1.micro:
@@ -757,6 +761,7 @@ Resources:
         configSets:
           Prepare:
             - PrepareDocker
+            - PrepareEnvironmentVariables
             - PrepareElysian
             - PreparePersistentFilesystemLinkingScript
           Deploy:
@@ -787,9 +792,16 @@ Resources:
               docker:
                 enabled: 'true'
                 ensureRunning: 'true'
+        PrepareEnvironmentVariables:
+          files:
+            "/etc/environment":
+              content: !Join [ "=", [ 'TARGET_ENVIRONMENT', !Ref TargetEnvironment ] ]
+              mode: '000744'
+              owner: root
+              group: root
         PrepareElysian:
           sources:
-            "/home/ec2-user/ixo-pds-repository": "https://github.com/ixofoundation/ixo-pds/tarball/master"
+            "/home/ec2-user/ixo-pds-repository": !If [IsQATargetEnvironent, "https://github.com/ixofoundation/ixo-pds/tarball/dev", "https://github.com/ixofoundation/ixo-pds/tarball/master"]
           commands:
             create-deployment-dir:
               command: mkdir -p elysian/bin
@@ -801,10 +813,13 @@ Resources:
               command: cp ixo-pds-repository/docker-compose.yml elysian/
               cwd: "/home/ec2-user"
             extract-docker-compose-prod:
-              command: cp ixo-pds-repository/docker-compose.prod.yml elysian/
+              command: !If [IsProdTargetEnvironent, "cp ixo-pds-repository/docker-compose.prod.yml elysian/", echo "not copying docker-compose.prod.yml"]
               cwd: "/home/ec2-user"
             extract-docker-compose-uat:
-              command: cp ixo-pds-repository/docker-compose.uat.yml elysian/
+              command: !If [IsUatTargetEnvironent, "cp ixo-pds-repository/docker-compose.uat.yml elysian/", echo "not copying docker-compose.uat.yml"]
+              cwd: "/home/ec2-user"
+            extract-docker-compose-qa:
+              command: !If [IsQATargetEnvironent, "cp ixo-pds-repository/docker-compose.qa.yml elysian/", echo "not copying docker-compose.qa.yml"]
               cwd: "/home/ec2-user"
             extract-elysian-scripts:
               command: cp ixo-pds-repository/bin/* elysian/bin
@@ -815,6 +830,9 @@ Resources:
             remove-repository:
               command: rm -rf ixo-pds-repository
               cwd: "/home/ec2-user"
+            replace-docker-image-master-tag-with-dev-if-qa:
+              command: !If [IsQATargetEnvironent, "sed -i 's/:ixo-elysian:master/ixo-elysian:dev/g' docker-compose.yml", echo "not replacing master image tag"]
+              cwd: "/home/ec2-user/elysian"
         PreparePersistentFilesystemLinkingScript:
           files:
             "/tmp/wait-for-volume-and-format-filesystem.sh":

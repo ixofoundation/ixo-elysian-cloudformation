@@ -16,7 +16,7 @@ Parameters:
     AllowedValues:
       - prod
       - uat
-      - dev
+      - qa
   NetworkStackName:
     Description: >-
       Name of an active CloudFormation stack that contains the networking
