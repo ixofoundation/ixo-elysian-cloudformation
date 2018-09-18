@@ -17,6 +17,8 @@ Parameters:
       - prod
       - uat
       - qa
+      - audit
+      - sdgfutures
   NetworkStackName:
     Description: >-
       Name of an active CloudFormation stack that contains the networking

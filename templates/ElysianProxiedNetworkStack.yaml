@@ -18,6 +18,15 @@ Parameters:
       - prod
       - uat
       - qa
+      - audit
+      - sdgfutures
+  ImageTag:
+    Description: Docker image tag that should be deployed
+    Type: String
+    Default: master
+    AllowedValues:
+      - master
+      - dev
   ProxyInstanceType:
     Description: EC2 instance type to apply when creating the Proxy  EC2 Instance
     Type: String
@@ -173,10 +182,6 @@ Parameters:
     MaxLength: '53'
     Default: 'default'
     ConstraintDescription: must be a valid subdomain
-Conditions:
-  IsProdTargetEnvironent: !Equals [ !Ref TargetEnvironment, prod ]
-  IsUatTargetEnvironent: !Equals [ !Ref TargetEnvironment, uat ]
-  IsQATargetEnvironent: !Equals [ !Ref TargetEnvironment, qa ]
 Mappings:
   AWSInstanceType2Arch:
     t1.micro:
@@ -441,7 +446,7 @@ Resources:
     Type: AWS::ElasticLoadBalancing::LoadBalancer
     Properties:
       SecurityGroups:
-      - !Ref ProxyInstanceSecurityGroup
+      - !Ref ELBSecurityGroup
       Scheme: internet-facing
       Subnets:
       - !Ref PublicSubnet
@@ -478,6 +483,19 @@ Resources:
           FromPort: '80'
           ToPort: '80'
           CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: '443'
+          ToPort: '443'
+          CidrIp: 0.0.0.0/0
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: fbd52d3e-087e-46f8-b55b-c22f6d4b0c79
+  ELBSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      VpcId: !Ref VPC
+      GroupDescription: Enable only HTTPS traffic on port 443
+      SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: '443'
           ToPort: '443'
@@ -803,13 +821,15 @@ Resources:
         PrepareEnvironmentVariables:
           files:
             "/etc/environment":
-              content: !Join [ "=", [ 'TARGET_ENVIRONMENT', !Ref TargetEnvironment ] ]
+              content: !Sub |
+                TARGET_ENVIRONMENT=${TargetEnvironment}
+                IMAGE_TAG=${ImageTag}
               mode: '000744'
               owner: root
               group: root
         PrepareElysian:
           sources:
-            "/home/ec2-user/ixo-pds-repository": !If [IsQATargetEnvironent, "https://github.com/ixofoundation/ixo-pds/tarball/dev", "https://github.com/ixofoundation/ixo-pds/tarball/master"]
+            "/home/ec2-user/ixo-pds-repository": !Sub 'https://github.com/ixofoundation/ixo-pds/tarball/${ImageTag}'
           commands:
             create-deployment-dir:
               command: mkdir -p elysian/bin
@@ -820,14 +840,8 @@ Resources:
             extract-docker-compose:
               command: cp ixo-pds-repository/docker-compose.yml elysian/
               cwd: "/home/ec2-user"
-            extract-docker-compose-prod:
-              command: !If [IsProdTargetEnvironent, "cp ixo-pds-repository/docker-compose.prod.yml elysian/", echo "not copying docker-compose.prod.yml"]
-              cwd: "/home/ec2-user"
-            extract-docker-compose-uat:
-              command: !If [IsUatTargetEnvironent, "cp ixo-pds-repository/docker-compose.uat.yml elysian/", echo "not copying docker-compose.uat.yml"]
-              cwd: "/home/ec2-user"
-            extract-docker-compose-qa:
-              command: !If [IsQATargetEnvironent, "cp ixo-pds-repository/docker-compose.qa.yml elysian/", echo "not copying docker-compose.qa.yml"]
+            extract-docker-compose-overide:
+              command: !Sub 'cp ixo-pds-repository/docker-compose.${TargetEnvironment}.yml elysian/'
               cwd: "/home/ec2-user"
             extract-elysian-scripts:
               command: cp ixo-pds-repository/bin/* elysian/bin
@@ -838,8 +852,8 @@ Resources:
             remove-repository:
               command: rm -rf ixo-pds-repository
               cwd: "/home/ec2-user"
-            replace-docker-image-master-tag-with-dev-if-qa:
-              command: !If [IsQATargetEnvironent, "sed -i 's/ixo-elysian:master/ixo-elysian:dev/g' docker-compose.yml", echo "not replacing master image tag"]
+            replace-docker-image-tag:
+              command: !Sub "sed -i 's/ixo-elysian:master/ixo-elysian:${ImageTag}/g' docker-compose.yml"
               cwd: "/home/ec2-user/elysian"
         PreparePersistentFilesystemLinkingScript:
           files:
