@@ -4,6 +4,10 @@
     "ParameterValue": "%%TargetEnvironment%%"
   },
   {
+    "ParameterKey": "ImageTag",
+    "ParameterValue": "%%ImageTag%%"
+  },
+  {
     "ParameterKey": "HostDomain",
     "ParameterValue": "elysian_uat.ixo.world"
   },
