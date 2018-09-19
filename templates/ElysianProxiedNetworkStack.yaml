@@ -852,8 +852,14 @@ Resources:
             remove-repository:
               command: rm -rf ixo-pds-repository
               cwd: "/home/ec2-user"
-            replace-docker-image-tag:
+            replace-cli-docker-image-tag:
+              command: !Sub "sed -i 's/ixo-cli:master/ixo-cli:${ImageTag}/g' docker-compose.yml"
+              cwd: "/home/ec2-user/elysian"
+            replace-elysian-docker-image-tag:
               command: !Sub "sed -i 's/ixo-elysian:master/ixo-elysian:${ImageTag}/g' docker-compose.yml"
+              cwd: "/home/ec2-user/elysian"
+            replace-pol-docker-image-tag:
+              command: !Sub "sed -i 's/ixo-pol:master/ixo-pol:${ImageTag}/g' docker-compose.yml"
               cwd: "/home/ec2-user/elysian"
         PreparePersistentFilesystemLinkingScript:
           files:
