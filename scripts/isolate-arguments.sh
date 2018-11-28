@@ -72,7 +72,7 @@ case "$TARGET_ENVIRONMENT" in
     TARGET_REGION="us-east-1"
     ;;
   uat)
-    TARGET_REGION="eu-west-1"
+    TARGET_REGION="ap-northeast-1"
     ;;
   qa)
     TARGET_REGION="eu-west-2"
