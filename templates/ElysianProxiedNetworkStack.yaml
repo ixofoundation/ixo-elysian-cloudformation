@@ -20,6 +20,7 @@ Parameters:
       - qa
       - audit
       - sdgfutures
+      - experiment
   ImageTag:
     Description: Docker image tag that should be deployed
     Type: String
@@ -364,6 +365,16 @@ Mappings:
       HVM64: ami-3e60745c
       HVMG2: NOT_SUPPORTED
 Resources:
+  ElysianIAMUser:
+    Type: AWS::IAM::User
+    Properties:
+      Groups:
+        - "parameter_store"
+  ElysianIAMUserAccessKey:
+    Type: AWS::IAM::AccessKey
+    Properties:
+      UserName:
+        !Ref ElysianIAMUser
   VPC:
     Type: 'AWS::EC2::VPC'
     Properties:
@@ -759,7 +770,7 @@ Resources:
             - '         --stack '
             - !Ref 'AWS::StackName'
             - '         --resource HostInstance '
-            - '         --configsets Deploy '
+            - '         --configsets Finalize '
             - '         --region '
             - !Ref 'AWS::Region'
             - |+
@@ -773,7 +784,7 @@ Resources:
             - ''
       Tags:
         - Key: Name
-          Value: Elysian/PDS Default Host Instance
+          Value: !Sub 'Elysian/PDS Default Host Instance ${TargetEnvironment}'
         - Key: Stack
           Value: !Ref 'AWS::StackName'
         - Key: Application
@@ -788,10 +799,13 @@ Resources:
           Prepare:
             - PrepareDocker
             - PrepareEnvironmentVariables
+            - PrepareAWSCLICredentials
+            - PrepareAWSCLIConfig
             - PrepareElysian
             - PreparePersistentFilesystemLinkingScript
-          Deploy:
-            - DeployElysian
+          Finalize:
+            - SymlinkFilesystem
+            - SetPermissions
         PrepareDocker:
           packages:
             yum:
@@ -827,6 +841,26 @@ Resources:
               mode: '000744'
               owner: root
               group: root
+        PrepareAWSCLICredentials:
+          files:
+            "/home/ec2-user/.aws/credentials":
+              content: !Sub |
+                [default]
+                aws_access_key_id = ${ElysianIAMUserAccessKey}
+                aws_secret_access_key = ${ElysianIAMUserAccessKey.SecretAccessKey}
+              mode: '000600'
+              owner: ec2-user
+              group: ec2-user
+        PrepareAWSCLIConfig:
+          files:
+            "/home/ec2-user/.aws/config":
+              content: !Sub |
+                [default]
+                output = text
+                region = ${AWS::Region}
+              mode: '000600'
+              owner: ec2-user
+              group: ec2-user
         PrepareElysian:
           sources:
             "/home/ec2-user/ixo-pds-repository": !Sub 'https://github.com/ixofoundation/ixo-pds/tarball/${ImageTag}'
@@ -903,7 +937,7 @@ Resources:
               mode: '000777'
               owner: root
               group: root
-        DeployElysian:
+        SymlinkFilesystem:
           commands:
             create-symlink-backup-volume:
               command: ln -s /persistent-volume/backup backup
@@ -917,11 +951,14 @@ Resources:
             create-symlink-db-volume-permissions:
               command: chmod -R ugo+r+w+x db
               cwd: "/home/ec2-user/elysian"
-            docker-compose-elysian:
-              command: !Join [ " ", [ './bin/start.sh', !Ref TargetEnvironment ] ]
-              cwd: "/home/ec2-user/elysian"
-              env:
-                HOME: "/home/ec2-user/elysian"
+        SetPermissions:
+          commands:
+            ec2-user-ownership-aws:
+              command: chown -R ec2-user:ec2-user .aws
+              cwd: "/home/ec2-user"
+            ec2-user-ownership-ixo:
+              command: chown -R ec2-user:ec2-user elysian
+              cwd: "/home/ec2-user"
       'AWS::CloudFormation::Designer':
         id: 090078c2-f708-4a32-93da-435cb089eeec
 Outputs:
