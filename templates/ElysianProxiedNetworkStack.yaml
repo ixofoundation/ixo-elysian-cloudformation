@@ -18,6 +18,16 @@ Parameters:
       - prod
       - uat
       - qa
+      - audit
+      - sdgfutures
+      - experiment
+  ImageTag:
+    Description: Docker image tag that should be deployed
+    Type: String
+    Default: master
+    AllowedValues:
+      - master
+      - dev
   ProxyInstanceType:
     Description: EC2 instance type to apply when creating the Proxy  EC2 Instance
     Type: String
@@ -173,10 +183,6 @@ Parameters:
     MaxLength: '53'
     Default: 'default'
     ConstraintDescription: must be a valid subdomain
-Conditions:
-  IsProdTargetEnvironent: !Equals [ !Ref TargetEnvironment, prod ]
-  IsUatTargetEnvironent: !Equals [ !Ref TargetEnvironment, uat ]
-  IsQATargetEnvironent: !Equals [ !Ref TargetEnvironment, qa ]
 Mappings:
   AWSInstanceType2Arch:
     t1.micro:
@@ -359,6 +365,16 @@ Mappings:
       HVM64: ami-3e60745c
       HVMG2: NOT_SUPPORTED
 Resources:
+  ElysianIAMUser:
+    Type: AWS::IAM::User
+    Properties:
+      Groups:
+        - "parameter_store"
+  ElysianIAMUserAccessKey:
+    Type: AWS::IAM::AccessKey
+    Properties:
+      UserName:
+        !Ref ElysianIAMUser
   VPC:
     Type: 'AWS::EC2::VPC'
     Properties:
@@ -441,7 +457,7 @@ Resources:
     Type: AWS::ElasticLoadBalancing::LoadBalancer
     Properties:
       SecurityGroups:
-      - !Ref ProxyInstanceSecurityGroup
+      - !Ref ELBSecurityGroup
       Scheme: internet-facing
       Subnets:
       - !Ref PublicSubnet
@@ -478,6 +494,19 @@ Resources:
           FromPort: '80'
           ToPort: '80'
           CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: '443'
+          ToPort: '443'
+          CidrIp: 0.0.0.0/0
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: fbd52d3e-087e-46f8-b55b-c22f6d4b0c79
+  ELBSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      VpcId: !Ref VPC
+      GroupDescription: Enable only HTTPS traffic on port 443
+      SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: '443'
           ToPort: '443'
@@ -741,7 +770,7 @@ Resources:
             - '         --stack '
             - !Ref 'AWS::StackName'
             - '         --resource HostInstance '
-            - '         --configsets Deploy '
+            - '         --configsets Finalize '
             - '         --region '
             - !Ref 'AWS::Region'
             - |+
@@ -755,7 +784,7 @@ Resources:
             - ''
       Tags:
         - Key: Name
-          Value: Elysian/PDS Default Host Instance
+          Value: !Sub 'Elysian/PDS Default Host Instance ${TargetEnvironment}'
         - Key: Stack
           Value: !Ref 'AWS::StackName'
         - Key: Application
@@ -770,10 +799,13 @@ Resources:
           Prepare:
             - PrepareDocker
             - PrepareEnvironmentVariables
+            - PrepareAWSCLICredentials
+            - PrepareAWSCLIConfig
             - PrepareElysian
             - PreparePersistentFilesystemLinkingScript
-          Deploy:
-            - DeployElysian
+          Finalize:
+            - SymlinkFilesystem
+            - SetPermissions
         PrepareDocker:
           packages:
             yum:
@@ -803,13 +835,35 @@ Resources:
         PrepareEnvironmentVariables:
           files:
             "/etc/environment":
-              content: !Join [ "=", [ 'TARGET_ENVIRONMENT', !Ref TargetEnvironment ] ]
+              content: !Sub |
+                TARGET_ENVIRONMENT=${TargetEnvironment}
+                IMAGE_TAG=${ImageTag}
               mode: '000744'
               owner: root
               group: root
+        PrepareAWSCLICredentials:
+          files:
+            "/home/ec2-user/.aws/credentials":
+              content: !Sub |
+                [default]
+                aws_access_key_id = ${ElysianIAMUserAccessKey}
+                aws_secret_access_key = ${ElysianIAMUserAccessKey.SecretAccessKey}
+              mode: '000600'
+              owner: ec2-user
+              group: ec2-user
+        PrepareAWSCLIConfig:
+          files:
+            "/home/ec2-user/.aws/config":
+              content: !Sub |
+                [default]
+                output = text
+                region = ${AWS::Region}
+              mode: '000600'
+              owner: ec2-user
+              group: ec2-user
         PrepareElysian:
           sources:
-            "/home/ec2-user/ixo-pds-repository": !If [IsQATargetEnvironent, "https://github.com/ixofoundation/ixo-pds/tarball/dev", "https://github.com/ixofoundation/ixo-pds/tarball/master"]
+            "/home/ec2-user/ixo-pds-repository": !Sub 'https://github.com/ixofoundation/ixo-pds/tarball/${ImageTag}'
           commands:
             create-deployment-dir:
               command: mkdir -p elysian/bin
@@ -820,14 +874,8 @@ Resources:
             extract-docker-compose:
               command: cp ixo-pds-repository/docker-compose.yml elysian/
               cwd: "/home/ec2-user"
-            extract-docker-compose-prod:
-              command: !If [IsProdTargetEnvironent, "cp ixo-pds-repository/docker-compose.prod.yml elysian/", echo "not copying docker-compose.prod.yml"]
-              cwd: "/home/ec2-user"
-            extract-docker-compose-uat:
-              command: !If [IsUatTargetEnvironent, "cp ixo-pds-repository/docker-compose.uat.yml elysian/", echo "not copying docker-compose.uat.yml"]
-              cwd: "/home/ec2-user"
-            extract-docker-compose-qa:
-              command: !If [IsQATargetEnvironent, "cp ixo-pds-repository/docker-compose.qa.yml elysian/", echo "not copying docker-compose.qa.yml"]
+            extract-docker-compose-overide:
+              command: !Sub 'cp ixo-pds-repository/docker-compose.${TargetEnvironment}.yml elysian/'
               cwd: "/home/ec2-user"
             extract-elysian-scripts:
               command: cp ixo-pds-repository/bin/* elysian/bin
@@ -838,8 +886,14 @@ Resources:
             remove-repository:
               command: rm -rf ixo-pds-repository
               cwd: "/home/ec2-user"
-            replace-docker-image-master-tag-with-dev-if-qa:
-              command: !If [IsQATargetEnvironent, "sed -i 's/ixo-elysian:master/ixo-elysian:dev/g' docker-compose.yml", echo "not replacing master image tag"]
+            replace-cli-docker-image-tag:
+              command: !Sub "sed -i 's/ixo-cli:master/ixo-cli:${ImageTag}/g' docker-compose.yml"
+              cwd: "/home/ec2-user/elysian"
+            replace-elysian-docker-image-tag:
+              command: !Sub "sed -i 's/ixo-elysian:master/ixo-elysian:${ImageTag}/g' docker-compose.yml"
+              cwd: "/home/ec2-user/elysian"
+            replace-pol-docker-image-tag:
+              command: !Sub "sed -i 's/ixo-pol:master/ixo-pol:${ImageTag}/g' docker-compose.yml"
               cwd: "/home/ec2-user/elysian"
         PreparePersistentFilesystemLinkingScript:
           files:
@@ -883,7 +937,7 @@ Resources:
               mode: '000777'
               owner: root
               group: root
-        DeployElysian:
+        SymlinkFilesystem:
           commands:
             create-symlink-backup-volume:
               command: ln -s /persistent-volume/backup backup
@@ -897,11 +951,14 @@ Resources:
             create-symlink-db-volume-permissions:
               command: chmod -R ugo+r+w+x db
               cwd: "/home/ec2-user/elysian"
-            docker-compose-elysian:
-              command: !Join [ " ", [ './bin/start.sh', !Ref TargetEnvironment ] ]
-              cwd: "/home/ec2-user/elysian"
-              env:
-                HOME: "/home/ec2-user/elysian"
+        SetPermissions:
+          commands:
+            ec2-user-ownership-aws:
+              command: chown -R ec2-user:ec2-user .aws
+              cwd: "/home/ec2-user"
+            ec2-user-ownership-ixo:
+              command: chown -R ec2-user:ec2-user elysian
+              cwd: "/home/ec2-user"
       'AWS::CloudFormation::Designer':
         id: 090078c2-f708-4a32-93da-435cb089eeec
 Outputs:
