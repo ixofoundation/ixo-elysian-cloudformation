@@ -156,6 +156,10 @@ Parameters:
     Description: Name of an existing Certificate to terminate on the LoadBalancer
     Type: String
     ConstraintDescription: must be the name of an existing Certificate with ARN.
+  NodeDid:
+    Description: DID of prefered validator node ixo blockchain node.
+    Type: String
+    ConstraintDescription: must be the DID of an existing validator node ixo blockchain node.
   KeyName:
     Description: Name of an existing EC2 KeyPair to enable SSH access to the instances
     Type: 'AWS::EC2::KeyPair::KeyName'
@@ -900,6 +904,9 @@ Resources:
               cwd: "/home/ec2-user/elysian"
             replace-pol-docker-image-tag:
               command: !Sub "sed -i 's/ixo-pol:master/ixo-pol:${ImageTag}/g' docker-compose.yml"
+              cwd: "/home/ec2-user/elysian"
+            replace-prefered-validator-node-did:
+              command: !Sub "sed -i 's/NODEDID=/NODEDID=${NodeDid}/g' docker-compose.${TargetEnvironment}.yml"
               cwd: "/home/ec2-user/elysian"
         PreparePersistentFilesystemLinkingScript:
           files:
