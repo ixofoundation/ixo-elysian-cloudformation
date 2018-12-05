@@ -1,8 +1,7 @@
 #!/bin/sh
 
 # Supported values
-SUPPORTED_ENVIRONMENTS=("prod" "uat" "qa" "audit" "sdgfutures")
-SUPPORTED_REGIONS=("us-east-1" "eu-west-1" "eu-west-2" "eu-west-3" "eu-central-1")
+SUPPORTED_ENVIRONMENTS=("prod" "uat" "qa" "audit" "sdgfutures" "experiment")
 
 isUnsupportedValue(){
    local value=$1
@@ -83,5 +82,9 @@ case "$TARGET_ENVIRONMENT" in
     ;;
   sdgfutures)
     TARGET_REGION="eu-central-1"
+    ;;
+  experiment)
+    TARGET_REGION="eu-west-1"
+    TARGET_ENVIRONMENT="uat"
     ;;
 esac
