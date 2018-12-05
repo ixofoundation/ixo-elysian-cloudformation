@@ -865,8 +865,17 @@ Resources:
           sources:
             "/home/ec2-user/ixo-pds-repository": !Sub 'https://github.com/ixofoundation/ixo-pds/tarball/${ImageTag}'
           commands:
-            create-deployment-dir:
+            create-bin-dir:
               command: mkdir -p elysian/bin
+              cwd: "/home/ec2-user"
+            extract-bin-scripts:
+              command: cp ixo-pds-repository/bin/* elysian/bin
+              cwd: "/home/ec2-user"
+            create-dba-dir:
+              command: mkdir -p elysian/dbadmin
+              cwd: "/home/ec2-user"
+            extract-dba-scripts:
+              command: cp ixo-pds-repository/dbadmin/* elysian/dbadmin
               cwd: "/home/ec2-user"
             extract-docker-app-container-config:
               command: cp ixo-pds-repository/config.json elysian/
@@ -876,9 +885,6 @@ Resources:
               cwd: "/home/ec2-user"
             extract-docker-compose-overide:
               command: !Sub 'cp ixo-pds-repository/docker-compose.${TargetEnvironment}.yml elysian/'
-              cwd: "/home/ec2-user"
-            extract-elysian-scripts:
-              command: cp ixo-pds-repository/bin/* elysian/bin
               cwd: "/home/ec2-user"
             remove-build-in-docker-compose:
               command: sed -i 's/build/# build/g' docker-compose.yml
