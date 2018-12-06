@@ -20,6 +20,10 @@
       "ParameterValue": "%%CertARN%%"
   },
   {
+      "ParameterKey": "NodeDid",
+      "ParameterValue": "%%NodeDid%%"
+  },
+  {
     "ParameterKey": "KeyName",
     "ParameterValue": "elysian.ixo.world"
   },

@@ -38,6 +38,10 @@ while (( "$#" )); do
       CERT_ARN=$2
       shift 1
       ;;
+    -n|--node-did)
+      NODE_DID=$2
+      shift 1
+      ;;
     --) # end argument parsing
       shift
       break
@@ -55,13 +59,14 @@ done
 
 INVALID_TARGET_ENVIRONMENT=$(isUnsupportedValue $TARGET_ENVIRONMENT ${SUPPORTED_ENVIRONMENTS[@]})
 
-if [ "$HELP" = true ] || [ "$INVALID_TARGET_ENVIRONMENT" = true ] || [ -z "$CERT_ARN" ];
+if [ "$HELP" = true ] || [ "$INVALID_TARGET_ENVIRONMENT" = true ] || [ -z "$CERT_ARN" ] || [ -z "$NODE_DID" ];
 then
     echo "\nUsage: $0 [Options]"
     echo "\nOptions:"
     echo "\t-t, --target-environment\n\t\t(valid values: ${SUPPORTED_ENVIRONMENTS[@]})."
     echo "\t-s, --stack-suffix\n\t\t(Must contain only letters, numbers, dashes and start with an alpha character.)"
     echo "\t-c, --cert-arn\n\t\t(Must be an existing ARN/Amazon Resource Name for the certificate to use.)"
+    echo "\t-n, --node-did\n\t\t(The DID of prefered validator node ixo blockchain node.)"
     exit
 fi
 

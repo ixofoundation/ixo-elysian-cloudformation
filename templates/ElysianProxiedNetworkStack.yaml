@@ -156,6 +156,10 @@ Parameters:
     Description: Name of an existing Certificate to terminate on the LoadBalancer
     Type: String
     ConstraintDescription: must be the name of an existing Certificate with ARN.
+  NodeDid:
+    Description: DID of prefered validator node ixo blockchain node.
+    Type: String
+    ConstraintDescription: must be the DID of an existing validator node ixo blockchain node.
   KeyName:
     Description: Name of an existing EC2 KeyPair to enable SSH access to the instances
     Type: 'AWS::EC2::KeyPair::KeyName'
@@ -641,7 +645,7 @@ Resources:
       KeyName: !Ref KeyName
       Tags:
         - Key: Name
-          Value: Elysian Proxy Instance
+          Value: !Sub 'Elysian Proxy Instance ${TargetEnvironment}'
         - Key: Stack
           Value: !Ref 'AWS::StackName'
         - Key: Application
@@ -865,8 +869,17 @@ Resources:
           sources:
             "/home/ec2-user/ixo-pds-repository": !Sub 'https://github.com/ixofoundation/ixo-pds/tarball/${ImageTag}'
           commands:
-            create-deployment-dir:
+            create-bin-dir:
               command: mkdir -p elysian/bin
+              cwd: "/home/ec2-user"
+            extract-bin-scripts:
+              command: cp ixo-pds-repository/bin/* elysian/bin
+              cwd: "/home/ec2-user"
+            create-dba-dir:
+              command: mkdir -p elysian/dbadmin
+              cwd: "/home/ec2-user"
+            extract-dba-scripts:
+              command: cp ixo-pds-repository/dbadmin/* elysian/dbadmin
               cwd: "/home/ec2-user"
             extract-docker-app-container-config:
               command: cp ixo-pds-repository/config.json elysian/
@@ -876,9 +889,6 @@ Resources:
               cwd: "/home/ec2-user"
             extract-docker-compose-overide:
               command: !Sub 'cp ixo-pds-repository/docker-compose.${TargetEnvironment}.yml elysian/'
-              cwd: "/home/ec2-user"
-            extract-elysian-scripts:
-              command: cp ixo-pds-repository/bin/* elysian/bin
               cwd: "/home/ec2-user"
             remove-build-in-docker-compose:
               command: sed -i 's/build/# build/g' docker-compose.yml
@@ -894,6 +904,9 @@ Resources:
               cwd: "/home/ec2-user/elysian"
             replace-pol-docker-image-tag:
               command: !Sub "sed -i 's/ixo-pol:master/ixo-pol:${ImageTag}/g' docker-compose.yml"
+              cwd: "/home/ec2-user/elysian"
+            replace-prefered-validator-node-did:
+              command: !Sub "sed -i 's/NODEDID=/NODEDID=${NodeDid}/g' docker-compose.${TargetEnvironment}.yml"
               cwd: "/home/ec2-user/elysian"
         PreparePersistentFilesystemLinkingScript:
           files:
