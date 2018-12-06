@@ -645,7 +645,7 @@ Resources:
       KeyName: !Ref KeyName
       Tags:
         - Key: Name
-          Value: Elysian Proxy Instance
+          Value: !Sub 'Elysian Proxy Instance ${TargetEnvironment}'
         - Key: Stack
           Value: !Ref 'AWS::StackName'
         - Key: Application
