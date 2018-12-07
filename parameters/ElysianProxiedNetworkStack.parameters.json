@@ -9,7 +9,7 @@
   },
   {
     "ParameterKey": "HostDomain",
-    "ParameterValue": "elysian_uat.ixo.world"
+    "ParameterValue": "default.elysian.link"
   },
   {
     "ParameterKey": "SubDomain",
@@ -25,7 +25,7 @@
   },
   {
     "ParameterKey": "KeyName",
-    "ParameterValue": "elysian.ixo.world"
+    "ParameterValue": "elysian-prod.ixo.world"
   },
   {
     "ParameterKey": "ProxyInstanceType",
